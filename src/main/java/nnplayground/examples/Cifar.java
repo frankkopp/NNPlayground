@@ -3,6 +3,7 @@ package nnplayground.examples;
 import org.apache.commons.io.FilenameUtils;
 import org.datavec.image.loader.CifarLoader;
 import org.datavec.image.loader.NativeImageLoader;
+import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.iterator.impl.CifarDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -12,6 +13,9 @@ import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.stats.StatsListener;
+import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
 import org.deeplearning4j.util.ModelSerializer;
 import org.deeplearning4j.util.StringUtils;
 import org.nd4j.linalg.activations.Activation;
@@ -68,10 +72,11 @@ public class Cifar {
 
         //train model and eval model
         MultiLayerNetwork model = cf.trainModelByCifarWithNet();//ignore
-//        UIServer uiServer = UIServer.getInstance();
-//        StatsStorage statsStorage = new InMemoryStatsStorage();
-//        uiServer.attach(statsStorage);
-        model.setListeners(new ScoreIterationListener(freIterations)); // new StatsListener( statsStorage),
+
+        UIServer uiServer = UIServer.getInstance();
+        StatsStorage statsStorage = new InMemoryStatsStorage();
+        uiServer.attach(statsStorage);
+        model.setListeners(new ScoreIterationListener(freIterations), new StatsListener(statsStorage, freIterations));
 
         CifarDataSetIterator cifar = new CifarDataSetIterator(batchSize, numSamples,
             new int[] {height, width, channels}, preProcessCifar, true);
