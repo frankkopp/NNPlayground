@@ -36,6 +36,9 @@
         </encoder>
     </appender>
 
+    <logger name="org.nd4j.linalg.dataset.DataSet" level="WARN" additivity="true">
+    </logger>
+
     <!-- By default, the level of the root level is set to DEBUG -->
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

@@ -30,12 +30,12 @@ public class CifarViewer extends Application {
 
   private final int width = 32;
   private final int height = 32;
-  private int zoom = 4;
+  private int zoom = 2;
 
   public CifarViewer() {
 
     // Startup the JavaFX platform
-    Platform.setImplicitExit(false);
+    Platform.setImplicitExit(true);
     PlatformImpl.startup(
         () -> {
           primaryStage = new Stage();

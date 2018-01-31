@@ -18,28 +18,47 @@ public class CifarIteration {
   private static int width = 32;
   private static int channels = 3;
   private static int numSamples = 50000;
-  private static int batchSize = 100;
+  private static int batchSize = 5000;
   private static boolean preProcessCifar = false; // use Zagoruyko's preprocess for Cifar
 
   public static void main(String[] args) throws Exception {
 
-    CifarDataSetIterator cifarDataSetIterator =
+    CifarDataSetIterator cifarTrainDataSetIterator =
         new CifarDataSetIterator(
             batchSize, numSamples, new int[] {height, width, channels}, preProcessCifar, true);
 
-    LOG.info("Number of examples: {}", cifarDataSetIterator.totalExamples());
-    LOG.info("Labels: {}", cifarDataSetIterator.getLabels());
+    CifarDataSetIterator cifarTestDataSetIterator =
+        new CifarDataSetIterator(
+            batchSize, numSamples, new int[] {height, width, channels}, preProcessCifar, false);
+
+    LOG.info("Number of total train examples: {}", cifarTrainDataSetIterator.totalExamples());
+    LOG.info("Number of total test examples: {}", cifarTestDataSetIterator.totalExamples());
 
     // scaling the dataset to 0..1.0
     DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
-    scaler.fit(cifarDataSetIterator);
-    cifarDataSetIterator.setPreProcessor(scaler);
+    scaler.fit(cifarTrainDataSetIterator);
+    cifarTrainDataSetIterator.setPreProcessor(scaler);
 
     CifarViewer cv = new CifarViewer();
 
-    while (cifarDataSetIterator.hasNext()) {
-      DataSet ds = cifarDataSetIterator.next();
-      ds.forEach((ex) -> cv.showImage(ex));
-    }
+    // get 5.000 (batch size) for this exercise
+    DataSet dsTrain = cifarTrainDataSetIterator.next();
+    DataSet dsTest = cifarTestDataSetIterator.next();
+    dsTrain.setLabelNames(cifarTrainDataSetIterator.getLabels());
+    dsTest.setLabelNames(cifarTestDataSetIterator.getLabels());
+
+    LOG.info("Number of train examples: {}", dsTrain.numExamples());
+    LOG.info("Number of test examples: {}", dsTest.numExamples());
+
+    LOG.info("Labels Train: {}", dsTrain.getLabelNamesList());
+    LOG.info("Labels Test: {}", dsTest.getLabelNamesList());
+
+
+
+    dsTrain.forEach(
+        (ex) -> {
+          cv.showImage(ex);
+        });
+
   }
 }
