@@ -1,4 +1,4 @@
-package nnplayground.examples;
+package fko.nnplayground.examples;
 
 import javafx.application.Application;
 import javafx.embed.swing.SwingFXUtils;

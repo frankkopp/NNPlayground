@@ -1,4 +1,4 @@
-package nnplayground;
+package fko.nnplayground;
 
 import com.sun.javafx.application.PlatformImpl;
 import javafx.application.Application;
@@ -71,9 +71,13 @@ public class CifarViewer extends Application {
     stage.show();
   }
 
-  public void showImage(final DataSet dataSet) {
+  public void showImage(final INDArray dataArray) {
+//    LOG.debug(
+//            "NDArray: \n{} \nshape:\n{}",
+//            dataArray,
+//            dataArray.shapeInfoToString());
 
-    Image cifarImage = createImage(dataSet);
+    Image cifarImage = createImage(dataArray);
 
     ImageView imageView = new ImageView(cifarImage);
     imageView.setFitHeight(zoom * height);
@@ -83,7 +87,7 @@ public class CifarViewer extends Application {
   }
 
   @NotNull
-  private Image createImage(final DataSet dataSet) {
+  private Image createImage(final INDArray dsRow) {
 
     WritableImage cifarImage = new WritableImage(width, height);
 
@@ -91,8 +95,6 @@ public class CifarViewer extends Application {
     int h = (int) cifarImage.getHeight();
 
     PixelWriter writer = cifarImage.getPixelWriter();
-
-    INDArray dsRow = dataSet.getFeatures();
 
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {

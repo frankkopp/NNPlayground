@@ -1,6 +1,6 @@
-package nnplayground.examples;
+package fko.nnplayground.examples;
 
-import nnplayground.util.DataUtilities;
+import fko.nnplayground.util.DataUtilities;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;
 import org.datavec.image.loader.NativeImageLoader;

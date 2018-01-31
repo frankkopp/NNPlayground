@@ -1,4 +1,4 @@
-package nnplayground.util;
+package fko.nnplayground.util;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;

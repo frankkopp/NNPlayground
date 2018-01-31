@@ -1,4 +1,4 @@
-package nnplayground.examples;
+package fko.nnplayground.examples;
 
 import org.apache.commons.io.FilenameUtils;
 import org.datavec.image.loader.CifarLoader;
