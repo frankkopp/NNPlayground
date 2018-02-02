@@ -1,18 +1,14 @@
 package fko.nnplayground;
 
 import org.deeplearning4j.datasets.iterator.impl.CifarDataSetIterator;
+import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalDouble;
 
 /** CifarIteration */
 public class CifarIteration {
@@ -29,6 +25,9 @@ public class CifarIteration {
   private static boolean preProcessCifar = false; // use Zagoruyko's preprocess for Cifar
 
   public static void main(String[] args) throws Exception {
+
+    // determines what ND4j uses internally as precision for floating point numbers
+    Nd4j.setDataType(DataBuffer.Type.FLOAT);
 
     CifarDataSetIterator cifarTrainDataSetIterator =
         new CifarDataSetIterator(
@@ -63,36 +62,27 @@ public class CifarIteration {
     // create the classifier
     LinearClassifier lc = new LinearClassifier(32, 32, 3, 10);
 
-    List<Double> losses = new ArrayList<>(dsTrain.numExamples());
-    //INDArray losses2 = Nd4j.zeros(dsTrain.numExamples());
+    INDArray losses = Nd4j.zeros(dsTrain.numExamples());
     for (int i=0; i<dsTrain.numExamples(); i++) {
       // one sample
       DataSet sample = dsTrain.get(i);
-      LOG.debug("Sample is of class: {}", dsTrain.getLabelName(sample.outcome()));
+      LOG.debug("Sample class: {}", dsTrain.getLabelName(sample.outcome()));
       //cv.showImage(sample.getFeatures());
 
       INDArray flattened = Nd4j.toFlattened(sample.getFeatureMatrix());
       INDArray scoreMatrix = lc.score(flattened.transpose());
       //LOG.debug("Returned score matrix: \nshape: {}\n{}", scoreMatrix.shapeInfoToString(), scoreMatrix);
-      LOG.debug("Max score: {}", scoreMatrix.maxNumber());
-      LOG.debug("Prediction: {} Class: {}",
-              scoreMatrix.argMax(0),
-              dsTrain.getLabelName(scoreMatrix.argMax(0).getInt(0)));
+      //LOG.debug("Max score: {}", scoreMatrix.maxNumber());
+      LOG.debug("Predicted class: {} (idx: {})",
+              dsTrain.getLabelName(scoreMatrix.argMax(0).getInt(0)),
+              scoreMatrix.argMax(0));
 
-      final double loss = lc.loss(scoreMatrix, sample.outcome());
-      losses.add(loss);
-      //losses2.put(0, i, loss);
+      final double loss = lc.lossSVM(scoreMatrix, sample.outcome());
+      losses.put(0, i, loss);
       LOG.debug("Loss: {}", loss);
     }
-
-    // average loss over all samples
-    OptionalDouble average = losses
-            .stream()
-            .mapToDouble(a -> a)
-            .average();
-    LOG.debug("Overall loss 1: {}", average.isPresent() ? average.getAsDouble() : 0);
-    //LOG.debug("Loss array: {}\n{}", losses2, losses2.shapeInfoToString());
-    //LOG.debug("Overall loss 2: {}", losses2.meanNumber());
+    //LOG.debug("Loss array: {}\n{}", losses, losses.shapeInfoToString());
+    LOG.debug("Overall lossSVM: {}", losses.meanNumber());
 
 //    cv.showImage(dsTrain.get(0).getFeatures());
 
