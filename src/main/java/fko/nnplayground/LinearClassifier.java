@@ -1,12 +1,11 @@
 package fko.nnplayground;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.nd4j.linalg.ops.transforms.Transforms.pow;
 
 /**
  * LinearClassifier
@@ -26,10 +25,13 @@ public class LinearClassifier {
 
   private INDArray weightsMatrix; // W
   private INDArray biasMatrix; // b
+  private INDArray gradientsWMatrix; // Gw
+  private INDArray gradientsBMatrix; // Gb
 
   // configuration
   private boolean useRegularization = true;
-  private double lambda = 0.5;
+  private double lambda = 0.1;
+  private LossFunction lossFunction = LossFunction.SVM;
 
   public LinearClassifier(final int height, final int width, final int nChannels, final int nLabels) {
     this.height = height;
@@ -41,9 +43,114 @@ public class LinearClassifier {
     // create and initialize weight matrix
     weightsMatrix = Nd4j.rand(nLabels, inputLength, seed);
     biasMatrix = Nd4j.rand(nLabels, 1, seed);
+    gradientsWMatrix = Nd4j.rand(nLabels, inputLength, seed);
+    gradientsBMatrix = Nd4j.rand(nLabels, inputLength, seed);
+  }
 
-    //LOG.debug("Created weights matrix W: \n{} \nshape: {}", weightsMatrix, weightsMatrix.shapeInfoToString());
-    //LOG.debug("Created bias matrix b: \n{} \nshape: {}", biasMatrix, biasMatrix.shapeInfoToString());
+  /**
+   * Computes the score, loss and gradients
+   */
+  public void train(DataSet dsTrain, int iterations) {
+    int numExamples = dsTrain.numExamples();
+    double totalLoss = 0d;
+
+    while (iterations-- > 0) {
+
+      // collect all losses over all examples
+      INDArray lossArray = Nd4j.zeros(numExamples);
+      // iterate over all data examples
+      for (int i = 0; i < numExamples; i++) {
+        double loss_i = 0d;
+
+        // one sample
+        DataSet sample = dsTrain.get(i);
+        int correctLabelIdx = sample.outcome();
+        LOG.debug("Sample class: {}", dsTrain.getLabelName(correctLabelIdx));
+
+        // compute scores
+        INDArray x_i = Nd4j.toFlattened(sample.getFeatures()).transpose();
+        INDArray scoreVector = score(x_i);
+        int predictedLabelIdx = scoreVector.argMax(0).getInt(0);
+        LOG.debug(
+            "Predicted class: {} (idx: {})",
+            dsTrain.getLabelName(predictedLabelIdx), predictedLabelIdx);
+
+        // compute loss and gradient
+        if (lossFunction.equals(LossFunction.SVM)) {
+          loss_i = lossSVM(x_i, scoreVector, correctLabelIdx);
+        } else if (lossFunction.equals(LossFunction.SOFTMAX)) {
+          INDArray pScoreVector = softmaxScore(scoreVector);
+          loss_i = softmaxLoss(x_i, pScoreVector, correctLabelIdx);
+        } else {
+          LOG.error("undefined loss function {}", lossFunction);
+          throw new RuntimeException("undefined loss function ");
+        }
+
+        lossArray.put(0, i, loss_i);
+        LOG.debug("Loss Sample {} =  {}", i, loss_i);
+      }
+
+      // normalize to average
+      Number lossAvgAll = lossArray.meanNumber();
+      LOG.debug("Overall Loss: {} ({})", lossAvgAll, lossFunction.name());
+      // normalize gradients as well
+      // TODO
+    }
+
+    // perform SGD update
+    // TODO
+  }
+
+
+  /**
+   * Multiclass SVM loss / hinge loss)
+   * TODO: Could this be done without the loop - it is possible in numpy
+   * TODO: numpy: np.maximum(0, scores - scores[y] +1)
+   * @param x_i the current sample feature vector
+   * @param scoreVector the score calculated for a given sample
+   * @param labelIndex the true label for this sample
+   * @return
+   */
+  public double lossSVM(final INDArray x_i, INDArray scoreVector, int labelIndex) {
+    double syi = scoreVector.getDouble(labelIndex, 0);
+    double loss_i = 0;
+
+    // hinge lossSVM (sum of difference to correct label +1)
+    for (int j=0; j<scoreVector.rows(); j++) {
+      if (j==labelIndex) continue;
+      double sj = scoreVector.getDouble(j, 0);
+      double loss_ij = sj - syi + 1;
+      if (loss_ij > 0 ) { // max(0, scoreDelta)
+        loss_i += loss_ij; // alternative squared hinge
+        // TODO: gradient calculation
+      }
+    }
+
+    if (useRegularization) {
+      loss_i += regularization();
+    }
+
+    return loss_i;
+  }
+
+  /**
+   * Softmax loss
+   * L = -log(e^syi / sum(e^sj)
+   *
+   * @param x_i
+   * @param scoreVector the softmax score calculated for a given image
+   * @param labelIndex the true label for this image
+   * @return
+   */
+  public double softmaxLoss(final INDArray x_i, INDArray scoreVector, int labelIndex) {
+    double scoreLabel = scoreVector.getDouble(labelIndex);
+    double tmpLoss = -Math.log10(scoreLabel);
+    // TODO: gradient calculation
+
+    if (useRegularization) {
+      tmpLoss += regularization();
+    }
+    return tmpLoss;
   }
 
   /**
@@ -57,84 +164,38 @@ public class LinearClassifier {
     return y;
   }
 
-
   /**
-   * @param scoreMatrix - 1d vector with scores for labels
+   * @param scoreVector - 1d vector with scores for labels
    * @return 1d array with score values for each label (y)
    */
-  public INDArray softmaxScore(INDArray scoreMatrix) {
+  public INDArray softmaxScore(INDArray scoreVector) {
     // s = f(x,W) ==> P = e^sk / sum_j(e^sj);
-
-    INDArray exp = Transforms.exp(scoreMatrix);
+    // shift the values of f so that the highest number is 0:
+    // otherwise e^sk might become a NaN (too high)
+    INDArray s = scoreVector.sub(scoreVector.maxNumber());
+    INDArray exp = Transforms.exp(s);
     INDArray p = exp.div(exp.sumNumber().doubleValue());
-
     return p;
   }
 
   /**
-   * Softmax loss
-   * L = -log(e^syi / sum(e^sj)
-   * @param scoreVector the score calculated for a given image
-   * @param labelIndex the true label for this image
-   * @return
+   * @return the regularization loss for the current weight matrix
    */
-  public double softmaxLoss(INDArray scoreVector, int labelIndex) {
-
-    LOG.debug("Label idx: {}", labelIndex);
-    LOG.debug("scoreVector: {}", scoreVector);
-    double scoreLabel = scoreVector.getDouble(labelIndex);
-    LOG.debug("score Label: {}", scoreLabel);
-    double tmpLoss = -Math.log10(scoreLabel);
-    LOG.debug("loss {}", tmpLoss);
-
-    if (useRegularization) {
-      tmpLoss += regularization();
-    }
-
-    return tmpLoss;
-  }
-
-  /**
-   * Multiclass SVM loss / hinge loss)
-   * TODO: Could this be done without the loop - it is possible in numpy
-   * TODO: numpy: np.maximum(0, scores - scores[y] +1)
-   *
-   * @param scoreVector the score calculated for a given image
-   * @param labelIndex the true label for this image
-   * @return
-   */
-  public double lossSVM(INDArray scoreVector, int labelIndex) {
-    //LOG.debug("s = {}", scoreVector);
-    //LOG.debug("yi = {}", labelIndex);
-    double syi = scoreVector.getDouble(labelIndex, 0);
-    //LOG.debug("syi = {}", syi);
-
-    double tmpLoss = 0;
-
-    // hinge lossSVM (sum of difference to correct label +1)
-    for (int j=0; j<scoreVector.rows(); j++) {
-      if (j==labelIndex) continue;
-      double sj = scoreVector.getDouble(j, 0);
-      tmpLoss += Math.max(0, sj - syi + 1); // alternative squared hinge
-    }
-
-    if (useRegularization) {
-      tmpLoss += regularization();
-    }
-
-    return tmpLoss;
-  }
-
-  /**
-   *
-   * @return
-   */
-  private double regularization() {
+  public double regularization() {
     // L2: lambda * R(W) ==> R(W) = sum_k sum_l W^2k,l
     // L1: lambda * R(W) ==> R(W) = sum_k sum_l abs(Wk,l)
-    // TODO: not sure if this is correct???
     double rLoss = lambda * Transforms.pow(weightsMatrix, 2).sumNumber().doubleValue();
-    LOG.debug("rLoss = {}", rLoss);
+    // double check
+    //    double rloss2 = 0d;
+    //    System.out.println(weightsMatrix);
+    //    for (int i=0; i<weightsMatrix.rows(); i++) {
+    //      for (int j=0; j<weightsMatrix.columns(); j++){
+    //        System.out.printf("[%.2f] ", weightsMatrix.getDouble(i,j));
+    //        rloss2 += lambda * weightsMatrix.getDouble(i,j) * weightsMatrix.getDouble(i,j);
+    //      }
+    //      System.out.println();
+    //    }
+    //    LOG.debug("Regularization Loss2 = {}", rloss2);
     return rLoss;
   }
 
@@ -168,6 +229,19 @@ public class LinearClassifier {
 
   public void setLamda(final double lamda) {
     this.lambda = lamda;
+  }
+
+  public LossFunction getLossFunction() {
+    return lossFunction;
+  }
+
+  public void setLossFunction(final LossFunction lossFunction) {
+    this.lossFunction = lossFunction;
+  }
+
+  public enum LossFunction {
+    SVM,
+    SOFTMAX
   }
 
 }

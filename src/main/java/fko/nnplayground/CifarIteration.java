@@ -62,27 +62,34 @@ public class CifarIteration {
     // create the classifier
     LinearClassifier lc = new LinearClassifier(32, 32, 3, 10);
 
-    INDArray losses = Nd4j.zeros(dsTrain.numExamples());
-    for (int i=0; i<dsTrain.numExamples(); i++) {
-      // one sample
-      DataSet sample = dsTrain.get(i);
-      LOG.debug("Sample class: {}", dsTrain.getLabelName(sample.outcome()));
-      //cv.showImage(sample.getFeatures());
+    lc.setUseRegularization(false);
+    lc.setLamda(0.1d);
 
-      INDArray flattened = Nd4j.toFlattened(sample.getFeatureMatrix());
-      INDArray scoreMatrix = lc.score(flattened.transpose());
-      //LOG.debug("Returned score matrix: \nshape: {}\n{}", scoreMatrix.shapeInfoToString(), scoreMatrix);
-      //LOG.debug("Max score: {}", scoreMatrix.maxNumber());
-      LOG.debug("Predicted class: {} (idx: {})",
-              dsTrain.getLabelName(scoreMatrix.argMax(0).getInt(0)),
-              scoreMatrix.argMax(0));
+    lc.setLossFunction(LinearClassifier.LossFunction.SVM);
+    lc.train(dsTrain, 1);
 
-      final double loss = lc.lossSVM(scoreMatrix, sample.outcome());
-      losses.put(0, i, loss);
-      LOG.debug("Loss: {}", loss);
-    }
-    //LOG.debug("Loss array: {}\n{}", losses, losses.shapeInfoToString());
-    LOG.debug("Overall lossSVM: {}", losses.meanNumber());
+    lc.setLossFunction(LinearClassifier.LossFunction.SOFTMAX);
+    lc.train(dsTrain, 1);
+
+
+//    INDArray losses = Nd4j.zeros(dsTrain.numExamples());
+//    for (int i=0; i<dsTrain.numExamples(); i++) {
+//      // one sample
+//      DataSet sample = dsTrain.get(i);
+//      LOG.debug("Sample class: {}", dsTrain.getLabelName(sample.outcome()));
+//      //cv.showImage(sample.getFeatures());
+//
+//      INDArray flattened = Nd4j.toFlattened(sample.getFeatureMatrix());
+//      INDArray scoreMatrix = lc.score(flattened.transpose());
+//      LOG.debug("Predicted class: {} (idx: {})",
+//              dsTrain.getLabelName(scoreMatrix.argMax(0).getInt(0)),
+//              scoreMatrix.argMax(0));
+//
+//      final double loss = lc.lossSVM(scoreMatrix, sample.outcome());
+//      losses.put(0, i, loss);
+//      LOG.debug("Loss: {}", loss);
+//    }
+//    LOG.debug("Overall lossSVM: {}", losses.meanNumber());
 
 //    cv.showImage(dsTrain.get(0).getFeatures());
 
