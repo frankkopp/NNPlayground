@@ -2,7 +2,6 @@ package fko.nnplayground;
 
 import org.deeplearning4j.datasets.iterator.impl.CifarDataSetIterator;
 import org.nd4j.linalg.api.buffer.DataBuffer;
-import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
@@ -62,14 +61,14 @@ public class CifarIteration {
     // create the classifier
     LinearClassifier lc = new LinearClassifier(32, 32, 3, 10);
 
-    lc.setUseRegularization(false);
-    lc.setLamda(0.1d);
+    lc.setUseRegularization(true);
+    lc.setRegularizationLamda(0.1d);
 
     lc.setLossFunction(LinearClassifier.LossFunction.SVM);
-    lc.train(dsTrain, 1);
+    lc.train(dsTrain, 100);
 
-    lc.setLossFunction(LinearClassifier.LossFunction.SOFTMAX);
-    lc.train(dsTrain, 1);
+//    lc.setLossFunction(LinearClassifier.LossFunction.SOFTMAX);
+//    lc.train(dsTrain, 1);
 
 
 //    INDArray losses = Nd4j.zeros(dsTrain.numExamples());

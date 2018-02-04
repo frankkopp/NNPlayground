@@ -39,6 +39,9 @@
     <logger name="org.nd4j.linalg.dataset.DataSet" level="WARN" additivity="true">
     </logger>
 
+    <logger name="fko.nnplayground.LinearClassifier" level="DEBUG" additivity="true">
+    </logger>
+
     <logger name="fko.nnplayground" level="DEBUG" additivity="true">
     </logger>
 
