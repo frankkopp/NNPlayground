@@ -1,6 +1,7 @@
 package fko.nnplayground;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
@@ -85,7 +86,7 @@ public class LinearClassifier {
           loss_i = lossSVM(x_i, scoreVector, correctLabelIdx);
         } else if (lossFunction.equals(LossFunction.SOFTMAX)) {
           INDArray pScoreVector = softmaxScore(scoreVector);
-          loss_i = softmaxLoss(x_i, pScoreVector, correctLabelIdx);
+          loss_i = lossSoftmax(x_i, pScoreVector, correctLabelIdx);
         } else {
           LOG.error("undefined loss function {}", lossFunction);
           throw new RuntimeException("undefined loss function ");
@@ -125,14 +126,8 @@ public class LinearClassifier {
     LOG.debug("SGD Update");
     LOG.debug("Weights {}", weightsMatrix.ravel());
     LOG.debug("Bias {}", biasMatrix.ravel());
-    for (int j = 0; j < weightsMatrix.rows(); j++) {
-      for (int i = 0; i < weightsMatrix.columns(); i++) {
-        weightsMatrix.put(
-            j, i,weightsMatrix.getDouble(j, i) + -learningRate * gradientsWMatrix.getDouble(j, i));
-      }
-      biasMatrix.put(
-          j, 0,biasMatrix.getDouble(j) + -learningRate * gradientsBMatrix.getDouble(j));
-    }
+    weightsMatrix.addi(gradientsWMatrix.mul(-learningRate));
+    biasMatrix.addi(gradientsBMatrix.mul(-learningRate));
     LOG.debug("Weights {}", weightsMatrix.ravel());
     LOG.debug("Bias {}", biasMatrix.ravel());
   }
@@ -207,16 +202,22 @@ public class LinearClassifier {
   /**
    * Softmax loss L = -log(e^syi / sum(e^sj)
    *
-   * @param x_i
-   * @param scoreVector the softmax score calculated for a given image
+   * @param x_i the current sample
+   * @param softmaxScoreVector the softmax score calculated for a given image
    * @param labelIndex the true label for this image
    * @return
    */
-  public double softmaxLoss(final INDArray x_i, INDArray scoreVector, int labelIndex) {
-    double scoreLabel = scoreVector.getDouble(labelIndex);
-    double tmpLoss = -Math.log10(scoreLabel);
-    // TODO: gradient calculation
-
+  public double lossSoftmax(final INDArray x_i, INDArray softmaxScoreVector, int labelIndex) {
+    // compute loss
+    double tmpLoss = -Math.log(softmaxScoreVector.getDouble(labelIndex));
+    // compute gradient dW[j, :] += (p-(j == y[i])) * X[:, i]
+    for (int j = 0; j < softmaxScoreVector.rows(); j++) {
+      if (j == labelIndex) {
+        gradientsWMatrix.getRow(j).addi(x_i.mul(softmaxScoreVector.sub(1).getRow(j)).transpose());
+      } else {
+        gradientsWMatrix.getRow(j).addi(x_i.mul(softmaxScoreVector.getRow(j)).transpose());
+      }
+    }
     return tmpLoss;
   }
 
@@ -228,10 +229,9 @@ public class LinearClassifier {
     // s = f(x,W) ==> P = e^sk / sum_j(e^sj);
     // shift the values of f so that the highest number is 0:
     // otherwise e^sk might become a NaN (too high)
-    INDArray s = scoreVector.sub(scoreVector.maxNumber());
-    INDArray exp = Transforms.exp(s);
-    INDArray p = exp.div(exp.sumNumber().doubleValue());
-    return p;
+    final INDArray s = scoreVector.sub(scoreVector.maxNumber());
+    final INDArray exp = Transforms.exp(s);
+    return exp.div(exp.sumNumber().doubleValue());
   }
 
   public void setWeightsMatrix(final INDArray weightsMatrix) {

@@ -56,7 +56,6 @@ public class CifarIteration {
     LOG.info("Number of test examples: {}", dsTest.numExamples());
 
     LOG.info("Labels Train: {}", dsTrain.getLabelNamesList());
-    //LOG.info("Labels Test: {}", dsTest.getLabelNamesList());
 
     // create the classifier
     LinearClassifier lc = new LinearClassifier(32, 32, 3, 10);
@@ -64,47 +63,12 @@ public class CifarIteration {
     lc.setUseRegularization(true);
     lc.setRegularizationLamda(0.1d);
 
-    lc.setLossFunction(LinearClassifier.LossFunction.SVM);
-    lc.train(dsTrain, 100);
-
-//    lc.setLossFunction(LinearClassifier.LossFunction.SOFTMAX);
+//    lc.setLossFunction(LinearClassifier.LossFunction.SVM);
 //    lc.train(dsTrain, 1);
 
+    lc.setLossFunction(LinearClassifier.LossFunction.SOFTMAX);
+    lc.train(dsTrain, 100);
 
-//    INDArray losses = Nd4j.zeros(dsTrain.numExamples());
-//    for (int i=0; i<dsTrain.numExamples(); i++) {
-//      // one sample
-//      DataSet sample = dsTrain.get(i);
-//      LOG.debug("Sample class: {}", dsTrain.getLabelName(sample.outcome()));
-//      //cv.showImage(sample.getFeatures());
-//
-//      INDArray flattened = Nd4j.toFlattened(sample.getFeatureMatrix());
-//      INDArray scoreMatrix = lc.score(flattened.transpose());
-//      LOG.debug("Predicted class: {} (idx: {})",
-//              dsTrain.getLabelName(scoreMatrix.argMax(0).getInt(0)),
-//              scoreMatrix.argMax(0));
-//
-//      final double loss = lc.lossSVM(scoreMatrix, sample.outcome());
-//      losses.put(0, i, loss);
-//      LOG.debug("Loss: {}", loss);
-//    }
-//    LOG.debug("Overall lossSVM: {}", losses.meanNumber());
-
-//    cv.showImage(dsTrain.get(0).getFeatures());
-
-//    LOG.debug(
-//        "Weight matrix: \n{} \nshape:\n{}",
-//        lc.getWeightsMatrix(),
-//        lc.getWeightsMatrix().shapeInfoToString());
-//
-//    INDArray row = lc.getWeightsMatrix().get(NDArrayIndex.interval(0,1)).reshape(1, 3, 32, 32);
-
-//    LOG.debug(
-//            "Row matrix: \n{} \nshape:\n{}",
-//            row,
-//            row.shapeInfoToString());
-
-//    cv.showImage(row);
 
   }
 }
