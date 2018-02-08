@@ -46,13 +46,6 @@ public class SimpleNeuralNetwork implements Network {
     b1 = Nd4j.zeros(this.sizeHiddenLayer, 1);
     W2 = Nd4j.rand(this.nLabels, this.sizeHiddenLayer, this.seed);
     b2 = Nd4j.zeros(this.nLabels, 1);
-
-
-//    LOG.debug("W1:\n{}\n{}",W1, W1.shapeInfoToString());
-//    LOG.debug("b1:\n{}\n{}",b1, b1.shapeInfoToString());
-//    LOG.debug("W2:\n{}\n{}",W2, W2.shapeInfoToString());
-//    LOG.debug("b2:\n{}\n{}",b2, b2.shapeInfoToString());
-
   }
 
   public void train(DataSetIterator dataSetIter, int epochs, int iterations, double learningRate) {
@@ -122,7 +115,7 @@ public class SimpleNeuralNetwork implements Network {
     }
     return scores;
   }
-  
+
   // TODO - listener pattern for TrainingListener
 
 }
