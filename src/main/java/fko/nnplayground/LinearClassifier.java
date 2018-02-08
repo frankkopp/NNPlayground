@@ -1,7 +1,6 @@
 package fko.nnplayground;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
@@ -30,7 +29,7 @@ public class LinearClassifier {
   // configuration
   private double learningRate = 0.001d;
   private boolean useRegularization = true;
-  private double regularizationLambda = 0.1;
+  private double regularizationLambda = 0.1d;
   private LossFunction lossFunction = LossFunction.SVM;
 
   public LinearClassifier(
@@ -156,8 +155,7 @@ public class LinearClassifier {
   }
 
   /**
-   * Multiclass SVM loss / hinge loss) TODO: Could this be done without the loop - it is possible in
-   * numpy TODO: numpy: np.maximum(0, scores - scores[y] +1)
+   * Multiclass SVM loss / hinge loss)
    *
    * @param x_i the current sample feature vector
    * @param scoreVector the score calculated for a given sample
@@ -169,6 +167,8 @@ public class LinearClassifier {
     double loss_i = 0;
 
     // hinge lossSVM (sum of difference to correct label +1)
+    // TODO: Could this be done without the loop - it is possible in numpy
+    // TODO: numpy: np.maximum(0, scores - scores[y] +1)
     for (int j = 0; j < scoreVector.rows(); j++) {
       if (j == correctLabelIndex) continue; // correct class
 
