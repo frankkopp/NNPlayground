@@ -5,10 +5,10 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.max;
 
 /**
@@ -101,13 +101,16 @@ public class SimpleNeuralNetwork implements Network {
     for (int x_i = 0; x_i < numExamples; x_i++) {
 
       // evaluate class scores
-      final INDArray dataT = batch.get(x_i).getFeatures().ravel().transpose();
-      final INDArray hiddenOutput = max(W1.mmul(dataT).add(b1), 0d);
+      final INDArray dataT = batch.get(x_i).getFeatures().ravel().transpose(); // n-dim array to vector
+      final INDArray hiddenOutput = max(W1.mmul(dataT).add(b1), 0d); // ReLU
       final INDArray output = W2.mmul(hiddenOutput).add(b2);
 
       // compute class probabilities
+      // s = f(x,W) ==> P = e^sk / sum_j(e^sj);
+      // shift the values of f so that the highest number is 0:
+      // otherwise e^sk might become a NaN (too high)
       final INDArray s = output.sub(output.maxNumber());
-      final INDArray exp = Transforms.exp(s);
+      final INDArray exp = exp(s);
       final INDArray outputP = exp.div(exp.sumNumber().doubleValue());
 
       // save scores
