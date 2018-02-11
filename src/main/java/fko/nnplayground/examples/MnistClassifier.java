@@ -173,7 +173,7 @@ public class MnistClassifier {
     net.init();
     net.setListeners(new ScoreIterationListener(10));
     // Then add the StatsListener to collect this information from the network, as it trains
-    net.addListeners(new StatsListener(statsStorage));
+    //net.addListeners(new StatsListener(statsStorage));
 
     log.debug("Total num of params: {}", net.numParams());
 

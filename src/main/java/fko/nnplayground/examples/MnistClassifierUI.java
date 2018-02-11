@@ -37,7 +37,7 @@ import java.io.IOException;
 @SuppressWarnings("restriction")
 public class MnistClassifierUI extends Application {
 
-  private static final String basePath = System.getProperty("java.io.tmpdir") + "/mnist";
+  private static final String basePath =  "./var/data" + "/mnist";
   private final int canvasWidth = 150;
   private final int canvasHeight = 150;
   private MultiLayerNetwork net; // trained model

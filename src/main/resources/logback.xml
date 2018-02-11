@@ -42,7 +42,7 @@
     <logger name="fko.nnplayground.LinearClassifier" level="INFO" additivity="true">
     </logger>
 
-    <logger name="fko.nnplayground" level="DEBUG" additivity="true">
+    <logger name="fko.nnplayground" level="INFO" additivity="true">
     </logger>
 
     <!-- By default, the level of the root level is set to DEBUG -->

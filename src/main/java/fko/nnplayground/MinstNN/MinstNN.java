@@ -6,15 +6,15 @@ import org.datavec.api.split.FileSplit;
 import org.datavec.image.loader.NativeImageLoader;
 import org.datavec.image.recordreader.ImageRecordReader;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
+import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
+import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Random;
 
 /** MinstNN */
@@ -28,11 +28,14 @@ public class MinstNN {
 
   public static void main(String[] args) throws Exception {
 
+    // determines what ND4j uses internally as precision for floating point numbers
+    Nd4j.setDataType(DataBuffer.Type.DOUBLE);
+
     int height = 28;
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 3;
+    int batchSize = 1;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -72,14 +75,17 @@ public class MinstNN {
     testIter.setPreProcessor(scaler); // same normalization for better results
 
     final int sizeHiddenLayer = 5;
-    SimpleNeuralNetwork snn = new SimpleNeuralNetwork(height, width, channels, outputNum, sizeHiddenLayer, seed);
+    SimpleNeuralNetwork snn =
+        new SimpleNeuralNetwork(height, width, channels, outputNum, sizeHiddenLayer, seed);
 
     int nEpochs = 1;
     int iterations = 1;
-    double learningRate = 0.1d;
+    snn.setLearningRate(0.01d);
+    snn.setUseRegularization(true);
+    snn.setRegularizationStrength(0.001d);
+    snn.setActivationHiddenLayer(Activations.SIGMOID);
+    snn.setActivationOutputLayer(Activations.SOFTMAX);
 
-    snn.train(trainIter, nEpochs, iterations, learningRate);
-
-
+    snn.train(trainIter, nEpochs, iterations);
   }
 }
