@@ -1,4 +1,4 @@
-package fko.nnplayground;
+package fko.nnplayground.UseCases;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;

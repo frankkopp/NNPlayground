@@ -1,4 +1,4 @@
-package fko.nnplayground;
+package fko.nnplayground.UseCases;
 
 import com.sun.javafx.application.PlatformImpl;
 import javafx.application.Application;
@@ -16,7 +16,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.DataSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

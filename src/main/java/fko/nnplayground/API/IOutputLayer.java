@@ -2,6 +2,9 @@ package fko.nnplayground.API;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
+/**
+ * TODO docs
+ */
 public interface IOutputLayer extends ILayer {
 
   /**

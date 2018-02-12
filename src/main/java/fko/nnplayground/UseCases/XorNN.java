@@ -1,6 +1,7 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.Network;
+import fko.nnplayground.nn.*;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -8,14 +9,8 @@ import org.nd4j.linalg.factory.Nd4j;
 
 /**
  * This basic example shows how to manually create a DataSet and train it to an basic Network.
- *
- * <p>The network consists in 2 input-neurons, 1 hidden-layer with 4 hidden-neurons, and 2
- * output-neurons.
- *
  * <p>I choose 2 output neurons, (the first fires for false, the second fires for true) because the
  * Evaluation class needs one neuron per classification.
- *
- * @author Peter Großmann
  */
 public class XorNN {
   public static void main(String[] args) {
@@ -69,10 +64,10 @@ public class XorNN {
 
     // layer (hidden layer)
     neuralNetwork.addLayer(new Layer(2, 32,
-            WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed));
+            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
     // output layer
     neuralNetwork.addLayer(new OutputLayer(32, 2, labels.transpose(),
-            WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed));
+            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
 
     int nEpochs = 1;
     int iterations = 50000;

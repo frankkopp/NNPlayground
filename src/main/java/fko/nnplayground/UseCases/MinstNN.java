@@ -1,6 +1,7 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.Network;
+import fko.nnplayground.nn.NeuralNetwork;
 import fko.nnplayground.util.DataUtilities;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;

@@ -1,14 +1,12 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.IOutputLayer;
 import fko.nnplayground.API.Network;
+import fko.nnplayground.nn.*;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.indexing.BooleanIndexing;
-import org.nd4j.linalg.indexing.conditions.Conditions;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,9 +153,9 @@ public class SimpleNeuralNetwork implements Network {
   private void optimize(final INDArray features, final INDArray labels) {
 
     // layer 1 (hidden layer)
-    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed);
+    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
     // layer 2 (output layer)
-    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, labels, WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed);
+    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, labels, WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
 
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {

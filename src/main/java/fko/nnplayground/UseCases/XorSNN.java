@@ -1,6 +1,5 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.UseCases;
 
-import fko.nnplayground.API.Network;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;

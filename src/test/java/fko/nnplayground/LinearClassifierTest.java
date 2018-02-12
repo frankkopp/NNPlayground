@@ -1,5 +1,6 @@
 package fko.nnplayground;
 
+import fko.nnplayground.UseCases.LinearClassifier;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;

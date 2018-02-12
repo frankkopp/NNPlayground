@@ -1,4 +1,4 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.nn;
 
 import fko.nnplayground.API.IOutputLayer;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -20,7 +20,7 @@ public class OutputLayer extends Layer implements IOutputLayer {
   private double totalError;
 
 
-  public OutputLayer(final int inputSize, final int outputSize, final INDArray labels, final WeightInitializer.WeightInit weightInit, final Activations activationFunction, final int seed) {
+  public OutputLayer(final int inputSize, final int outputSize, final INDArray labels, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
     super(inputSize, outputSize, weightInit, activationFunction, seed);
     this.labels = labels;
   }
@@ -66,5 +66,11 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public double getTotalError() {
     return totalError;
+  }
+
+  @Override
+  public String toString() {
+    return "OutputLayer{" +
+            super.toString() + " }";
   }
 }

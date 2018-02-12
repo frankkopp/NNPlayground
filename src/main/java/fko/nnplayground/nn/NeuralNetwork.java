@@ -1,4 +1,4 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.nn;
 
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.IOutputLayer;
@@ -10,16 +10,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-/** SimpleNeuralNetwork */
+/**
+ * Multi layered NeuralNetwork
+ */
 public class NeuralNetwork implements Network {
 
   private static final Logger LOG = LoggerFactory.getLogger(NeuralNetwork.class);
 
   private final int inputLength;
-  private final int nLabels;
-  private final int seed;
+  private final int outputLength;
 
   private int epochs;
   private int iterations;
@@ -31,7 +34,6 @@ public class NeuralNetwork implements Network {
 
   /**
    * TODO: add Regularization
-   * TODO: generalize for many layers
    * TODO: add other activations / SOFTMAX
    * TODO: add listener
    * @param height
@@ -52,8 +54,7 @@ public class NeuralNetwork implements Network {
 
   public NeuralNetwork(final int inputLength, final int nLabels, final int seed) {
     this.inputLength = inputLength;
-    this.nLabels = nLabels;
-    this.seed = seed;
+    this.outputLength = nLabels;
   }
 
   /**
@@ -213,4 +214,16 @@ public class NeuralNetwork implements Network {
     layerList.add(layer);
   }
 
+  @Override
+  public String toString() {
+    return "NeuralNetwork{" +
+            "inputLength=" + inputLength +
+            ", outputLength=" + outputLength +
+            ", epochs=" + epochs +
+            ", iterations=" + iterations +
+            ", learningRate=" + learningRate +
+            ", totalIterations=" + totalIterations +
+            ", layerList=" + Arrays.toString(layerList.toArray()) +
+            '}';
+  }
 }

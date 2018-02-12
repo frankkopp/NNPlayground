@@ -1,4 +1,4 @@
-package fko.nnplayground.MinstNN;
+package fko.nnplayground.nn;
 
 import org.apache.commons.math3.util.FastMath;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -44,6 +44,8 @@ public class WeightInitializer {
       default:
         weightsMatrix = Nd4j.randn(outputSize, inputSize, seed);
     }
+    LOG.debug("Weights initialized for outputSize {} and inputSize {}", outputSize, inputSize);
+    LOG.trace("\n{}", weightsMatrix);
     return weightsMatrix;
   }
 

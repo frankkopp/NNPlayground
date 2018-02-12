@@ -1,4 +1,4 @@
-package fko.nnplayground;
+package fko.nnplayground.UseCases;
 
 import org.deeplearning4j.datasets.iterator.impl.CifarDataSetIterator;
 import org.nd4j.linalg.api.buffer.DataBuffer;

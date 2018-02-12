@@ -1,6 +1,6 @@
 package fko.nnplayground.MinstNN;
 
-import org.apache.commons.math3.util.FastMath;
+import fko.nnplayground.UseCases.SimpleNeuralNetwork;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
