@@ -6,36 +6,38 @@ import fko.nnplayground.API.Network;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
+import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Multi layered NeuralNetwork
- */
+/** Multi layered NeuralNetwork */
 public class NeuralNetwork implements Network {
 
   private static final Logger LOG = LoggerFactory.getLogger(NeuralNetwork.class);
 
-  private final int inputLength;
-  private final int outputLength;
+  // state to serialize
+  private int inputLength;
+  private int outputLength;
+  private List<ILayer> layerList = new ArrayList<>();
 
+  // can be regenerated after loading
   private int epochs;
   private int iterations;
   private double learningRate;
 
   private int totalIterations;
 
-  private List<ILayer> layerList = new ArrayList<>();
-
   /**
-   * TODO: add Regularization
-   * TODO: add other activations / SOFTMAX
-   * TODO: add listener
+   * TODO: add evaluation TODO: save and load train data TODO: add Regularization TODO: add other
+   * activations / SOFTMAX TODO: add listener
+   *
    * @param height
    * @param width
    * @param channels
@@ -43,11 +45,7 @@ public class NeuralNetwork implements Network {
    * @param seed
    */
   public NeuralNetwork(
-      final int height,
-      final int width,
-      final int channels,
-      int nLabels,
-      int seed) {
+      final int height, final int width, final int channels, int nLabels, int seed) {
 
     this(height * width * channels, nLabels, seed);
   }
@@ -81,8 +79,8 @@ public class NeuralNetwork implements Network {
         DataSet batch = dataSetIter.next();
         // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
         // also needs to be transposed so the numExp are columns and inputData is rows
-        final INDArray features = batch.getFeatures()
-                .reshape(batch.numExamples(), inputLength).transpose();
+        final INDArray features =
+            batch.getFeatures().reshape(batch.numExamples(), inputLength).transpose();
         final INDArray labels = batch.getLabels().transpose();
         optimize(features, labels);
       }
@@ -103,8 +101,8 @@ public class NeuralNetwork implements Network {
     totalIterations = 0;
     // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
     // also needs to be transposed so the numExp are columns and inputData is rows
-    final INDArray features = dataSet.getFeatures()
-            .reshape(dataSet.numExamples(), inputLength).transpose();
+    final INDArray features =
+        dataSet.getFeatures().reshape(dataSet.numExamples(), inputLength).transpose();
     final INDArray labels = dataSet.getLabels().transpose();
 
     // Epoch
@@ -137,6 +135,7 @@ public class NeuralNetwork implements Network {
 
   /**
    * Runs the optimization loop - forward pass, loss, back propagation, update params
+   *
    * @param features
    * @param labels
    */
@@ -175,13 +174,16 @@ public class NeuralNetwork implements Network {
 
       // output loss
       if (totalIterations++ % 100 == 0) {
-        LOG.info("Loss at iteration {} (batch size {}) = {}",
-                totalIterations-1, features.columns(), outputLayer.getTotalError());
+        LOG.info(
+            "Loss at iteration {} (batch size {}) = {}",
+            totalIterations - 1,
+            features.columns(),
+            outputLayer.getTotalError());
       }
 
       // back propagation through all layers
       INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(true));
-      for (int i=layerList.size()-2;i>=0;i--) {
+      for (int i = layerList.size() - 2; i >= 0; i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
       }
 
@@ -193,6 +195,106 @@ public class NeuralNetwork implements Network {
       }
     }
   }
+
+  @Override
+  public void eval(final DataSet dataSet) {
+
+    List<INDArray> realOutputs = new ArrayList<>();
+    List<INDArray> guesses = new ArrayList<>();
+
+    // iterate over all examples
+    // TODO: do this without loop for all examples
+    for (int n = 0; n < dataSet.numExamples(); n++) {
+      // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
+      // also needs to be transposed so the numExp are columns and inputData is rows
+      final INDArray features = dataSet.get(n).getFeatures().reshape(1, inputLength).transpose();
+      final INDArray labels = dataSet.get(n).getLabels().transpose();
+
+      final INDArray prediction = predict(features);
+
+      realOutputs.add(labels);
+      guesses.add(prediction);
+    }
+
+    int truePositives = 0;
+    int trueNegatives = 0;
+    int falsePositives = 0;
+    int falseNegatives = 0;
+
+    final int nLabels = dataSet.getLabels().transpose().rows();
+
+    System.out.println("Result:");
+    for (int i = 0; i < realOutputs.size(); i++) {
+      System.out.printf(
+          "Example %d: Correct = %s Predicted = %s ",
+          i, realOutputs.get(i).ravel(), guesses.get(i).ravel());
+
+      // argmax
+      final int actual = (int) Nd4j.argMax(realOutputs.get(i), 1).getDouble(0);
+      final int predicted = (int) Nd4j.argMax(guesses.get(i), 1).getDouble(0);
+      if (actual == predicted) {
+        System.out.println("CORRECT");
+        truePositives++;
+        trueNegatives += nLabels - 1;
+      } else {
+        System.out.println("INCORRECT");
+        falsePositives++;
+        falseNegatives++;
+        trueNegatives += nLabels - 2;
+      }
+    }
+    System.out.printf("True Positives  %d%nFalse Positives %d%nTrue Negatives  %d%nFalse Negatives %d%n",
+            truePositives, falsePositives, trueNegatives, falseNegatives);
+
+    int totalPositives = dataSet.numExamples(); // number of examples as each examples has one positive
+    int totalNegatives = dataSet.numExamples() // number off examples time number of labels - 1 as one is positive
+            * (nLabels -1);
+
+    System.out.printf("Total Positives: %d Total Negatives: %d%n", totalPositives, totalNegatives);
+    System.out.printf("Recall   : %.2f%n", (double) truePositives/totalPositives);
+    System.out.printf("Precision: %.2f%n", (double) truePositives/(totalPositives+falsePositives));
+    System.out.printf("Accuracy : %.2f%n", (double) (truePositives+trueNegatives)/(totalPositives+totalNegatives));
+    System.out.printf("F1Score  : %.2f%n", (double) (2*truePositives)/(2*truePositives + falsePositives + falseNegatives));
+  }
+
+  @Override
+  public INDArray predict(final INDArray features) {
+    // forward pass through all layers
+    INDArray outputLastLayer = features;
+    for (ILayer layer : layerList) {
+      outputLastLayer = layer.forwardPass(outputLastLayer);
+    }
+    return outputLastLayer;
+  }
+
+  @Override
+  public void saveToFile(final String nnSaveFile) {
+    try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(nnSaveFile))) {
+      //      ZipOutputStream zipOutputStream = new ZipOutputStream(new
+      // CloseShieldOutputStream(stream));
+      //
+      //      // Save layers as binary
+      //      int c=0;
+      //      for (ILayer layer : layerList) {
+      //        ZipEntry zipLayer = new ZipEntry("layer_" + c++ + ".bin");
+      //        zipOutputStream.putNextEntry(zipLayer);
+      //        DataOutputStream dos = new DataOutputStream(new
+      // BufferedOutputStream(zipOutputStream));
+      //        try {
+      //          layer.write(dos);
+      //        } finally {
+      //          dos.flush();
+      //        }
+      //      }
+      //
+      //      zipOutputStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public void loadFromFile(final String nnSaveFile) {}
 
   @Override
   public double getLearningRate() {
@@ -216,14 +318,21 @@ public class NeuralNetwork implements Network {
 
   @Override
   public String toString() {
-    return "NeuralNetwork{" +
-            "inputLength=" + inputLength +
-            ", outputLength=" + outputLength +
-            ", epochs=" + epochs +
-            ", iterations=" + iterations +
-            ", learningRate=" + learningRate +
-            ", totalIterations=" + totalIterations +
-            ", layerList=" + Arrays.toString(layerList.toArray()) +
-            '}';
+    return "NeuralNetwork{"
+        + "inputLength="
+        + inputLength
+        + ", outputLength="
+        + outputLength
+        + ", epochs="
+        + epochs
+        + ", iterations="
+        + iterations
+        + ", learningRate="
+        + learningRate
+        + ", totalIterations="
+        + totalIterations
+        + ", layerList="
+        + Arrays.toString(layerList.toArray())
+        + '}';
   }
 }

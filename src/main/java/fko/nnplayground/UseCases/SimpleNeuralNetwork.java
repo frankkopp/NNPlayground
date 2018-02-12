@@ -181,6 +181,17 @@ public class SimpleNeuralNetwork implements Network {
     }
   }
 
+  @Override
+  public void eval(final DataSet dataSet) {
+    // not implemented
+  }
+
+  @Override
+  public INDArray predict(final INDArray features) {
+    // not implemented
+    return null;
+  }
+
   public double getLearningRate() {
     return learningRate;
   }
@@ -189,6 +200,16 @@ public class SimpleNeuralNetwork implements Network {
     this.learningRate = learningRate;
   }
 
+
+  @Override
+  public void saveToFile(final String nnSaveFile) {
+    // not implemented
+  }
+
+  @Override
+  public void loadFromFile(final String nnSaveFile) {
+    // not implemented
+  }
 
   @Override
   public List<ILayer> getLayerList() {
