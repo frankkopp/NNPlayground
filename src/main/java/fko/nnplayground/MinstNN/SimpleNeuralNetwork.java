@@ -38,14 +38,7 @@ public class SimpleNeuralNetwork implements Network {
   private Activations activationHiddenLayer;
   private Activations activationOutputLayer;
 
-  private INDArray hiddenOutputCache;
   private int totalIterations;
-
-  private boolean checkGradients = false;
-  private INDArray dW2;
-  private INDArray db2;
-  private INDArray dW1;
-  private INDArray db1;
 
   public SimpleNeuralNetwork(
       final int height,
@@ -65,7 +58,6 @@ public class SimpleNeuralNetwork implements Network {
     this.nLabels = nLabels;
     this.sizeHiddenLayer = sizeHiddenLayer;
     this.seed = seed;
-    this.hiddenOutputCache = null;
 
     // defaults
     epochs = 1;
@@ -73,8 +65,6 @@ public class SimpleNeuralNetwork implements Network {
     learningRate = 0.1d;
     useRegularization = false;
     regularizationStrength = 0.001;
-    activationHiddenLayer = Activations.IDENTITY;
-    activationOutputLayer = Activations.IDENTITY;
   }
 
   /**
@@ -88,16 +78,24 @@ public class SimpleNeuralNetwork implements Network {
     this.epochs = epochs;
     this.iterations = iterations;
     totalIterations = 0;
-    // Batch
-    while (dataSetIter.hasNext()) { // one batch
-      // get the next batch of examples
-      DataSet batch = dataSetIter.next();
-      // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
-      // also needs to be transposed so the numExp are columns and inputData is rows
-      final INDArray features = batch.getFeatures()
-              .reshape(batch.numExamples(), inputLength).transpose();
-      final INDArray labels = batch.getLabels();
-      optimize(features, labels);
+
+    // Epoch
+    for (int epoch = 0; epoch < this.epochs; epoch++) {
+      LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
+      if (dataSetIter.resetSupported()) {
+        dataSetIter.reset();
+      }
+      // Batch
+      while (dataSetIter.hasNext()) { // one batch
+        // get the next batch of examples
+        DataSet batch = dataSetIter.next();
+        // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
+        // also needs to be transposed so the numExp are columns and inputData is rows
+        final INDArray features = batch.getFeatures()
+                .reshape(batch.numExamples(), inputLength).transpose();
+        final INDArray labels = batch.getLabels().transpose();
+        optimize(features, labels);
+      }
     }
   }
 
@@ -118,7 +116,12 @@ public class SimpleNeuralNetwork implements Network {
     final INDArray features = dataSet.getFeatures()
             .reshape(dataSet.numExamples(), inputLength).transpose();
     final INDArray labels = dataSet.getLabels().transpose();
-    optimize(features, labels);
+
+    // Epoch
+    for (int epoch = 0; epoch < epochs; epoch++) {
+      LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
+      optimize(features, labels);
+    }
   }
 
   /**
@@ -134,50 +137,61 @@ public class SimpleNeuralNetwork implements Network {
     this.epochs = epochs;
     this.iterations = iterations;
     totalIterations = 0;
-    optimize(features, labels);
+
+    // Epoch
+    for (int epoch = 0; epoch < epochs; epoch++) {
+      LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
+      optimize(features, labels);
+    }
   }
 
+  /**
+   * Runs the optimization loop - forward pass, loss, back propagation, update params
+   * TODO: add Bias
+   * TODO: add Regularization
+   * TODO: generalize for many layers
+   * TODO: add other activations / SOFTMAX
+   * TODO: add listener
+   *
+   * @param features
+   * @param labels
+   */
   private void optimize(final INDArray features, final INDArray labels) {
 
     // initialize weights matrices
     initWeights(seed);
 
-    // Epoch
-    for (int epoch = 0; epoch < epochs; epoch++) {
-      LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
+    // Iterations
+    for (int iteration = 0; iteration < iterations; iteration++) {
 
-      // Iterations
-      for (int iteration = 0; iteration < iterations; iteration++) {
+      // feed forward
+      final INDArray layer_0 = features;
+      final INDArray layer_1 = nonLin(Activations.SIGMOID, W1.mmul(layer_0));
+      final INDArray layer_2 = nonLin(Activations.SIGMOID, W2.mmul(layer_1));
 
-        // feed forward
-        final INDArray layer_0 = features;
-        final INDArray layer_1 = nonLin(Activations.SIGMOID, W1.mmul(layer_0));
-        final INDArray layer_2 = nonLin(Activations.SIGMOID, W2.mmul(layer_1));
-
-        // how much did we miss the target value?
-        final INDArray layer_2_error = layer_2.sub(labels);
-        final double loss = Transforms.abs(layer_2_error).meanNumber().doubleValue();
-        totalIterations++;
-        if (totalIterations % 1000 == 0) {
-          LOG.info("Loss at iteration {} (batch size {}) = {}",
-                  totalIterations, features.columns(), loss);
-        }
-
-        // in what direction is the target value?
-        // were we really sure? if so, don't change too much.
-        final INDArray layer_2_delta = layer_2_error.mul(nonLinDerivative(Activations.SIGMOID, layer_2));
-
-        // how much did each l1 value contribute to the l2 error (according to the weights)?
-        final INDArray layer_1_error = W2.transpose().mmul(layer_2_delta);
-
-        // in what direction is the target l1?
-        // were we really sure? if so, don't change too much.
-        final INDArray layer_1_delta = layer_1_error.mul(nonLinDerivative(Activations.SIGMOID,layer_1));
-
-        // update parameters
-        W2.subi(layer_2_delta.mmul(layer_1.transpose()).mul(learningRate));
-        W1.subi(layer_1_delta.mmul(layer_0.transpose()).mul(learningRate));
+      // how much did we miss the target value?
+      final INDArray layer_2_error = layer_2.sub(labels);
+      final double loss = Transforms.abs(layer_2_error).meanNumber().doubleValue();
+      totalIterations++;
+      if (totalIterations % 100 == 0) {
+        LOG.info("Loss at iteration {} (batch size {}) = {}",
+                totalIterations, features.columns(), loss);
       }
+
+      // in what direction is the target value?
+      // were we really sure? if so, don't change too much.
+      final INDArray layer_2_delta = layer_2_error.mul(nonLinDerivative(Activations.SIGMOID, layer_2));
+
+      // how much did each l1 value contribute to the l2 error (according to the weights)?
+      final INDArray layer_1_error = W2.transpose().mmul(layer_2_delta);
+
+      // in what direction is the target l1?
+      // were we really sure? if so, don't change too much.
+      final INDArray layer_1_delta = layer_1_error.mul(nonLinDerivative(Activations.SIGMOID,layer_1));
+
+      // update parameters
+      W2.subi(layer_2_delta.mmul(layer_1.transpose()).mul(learningRate));
+      W1.subi(layer_1_delta.mmul(layer_0.transpose()).mul(learningRate));
     }
   }
 
@@ -204,7 +218,8 @@ public class SimpleNeuralNetwork implements Network {
         out = Transforms.identity(in);
         break;
       case SIGMOID:
-        out = Transforms.sigmoid(in);
+        //out = Transforms.sigmoid(in);
+        out = Transforms.pow(Transforms.exp(in.mul(-1)).add(1), -1);
         break;
       case TANH:
         out = Transforms.tanh(in);

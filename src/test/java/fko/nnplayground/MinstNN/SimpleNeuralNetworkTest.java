@@ -32,6 +32,8 @@ class SimpleNeuralNetworkTest {
     System.out.println("Sigmoid'(array) lib\n" + derivedSigmoidArray);
     INDArray myDerivative = sigmoidArray.mul(-1).add(1).mul(sigmoidArray);
     System.out.println("Sigmoid'(array) manual \n" + myDerivative);
+
+    // ==> bug in Nd4j sigmoidDerivative
   }
 
 }

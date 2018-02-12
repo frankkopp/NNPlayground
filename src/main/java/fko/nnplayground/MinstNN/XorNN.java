@@ -72,8 +72,6 @@ public class XorNN {
     snn.setLearningRate(0.1d);
     snn.setUseRegularization(false);
     snn.setRegularizationStrength(0.001d);
-    snn.setActivationHiddenLayer(Activations.SIGMOID);
-    snn.setActivationOutputLayer(Activations.SIGMOID);
 
     snn.train(dataSet, nEpochs, iterations);
   }

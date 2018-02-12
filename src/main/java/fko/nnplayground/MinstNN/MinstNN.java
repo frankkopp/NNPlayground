@@ -35,7 +35,7 @@ public class MinstNN {
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 1;
+    int batchSize = 32;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -74,17 +74,17 @@ public class MinstNN {
     DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, outputNum);
     testIter.setPreProcessor(scaler); // same normalization for better results
 
-    final int sizeHiddenLayer = 5;
+    final int sizeHiddenLayer = 1000;
     SimpleNeuralNetwork snn =
         new SimpleNeuralNetwork(height, width, channels, outputNum, sizeHiddenLayer, seed);
 
-    int nEpochs = 1;
-    int iterations = 1;
-    snn.setLearningRate(0.01d);
-    snn.setUseRegularization(true);
+    int nEpochs = 100;
+    int iterations = 10;
+    snn.setLearningRate(1e-3d);
+    snn.setUseRegularization(false);
     snn.setRegularizationStrength(0.001d);
     snn.setActivationHiddenLayer(Activations.SIGMOID);
-    snn.setActivationOutputLayer(Activations.SOFTMAX);
+    snn.setActivationOutputLayer(Activations.SIGMOID);
 
     snn.train(trainIter, nEpochs, iterations);
   }
