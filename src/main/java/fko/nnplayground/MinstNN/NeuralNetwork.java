@@ -162,7 +162,7 @@ public class NeuralNetwork implements Network {
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {
 
-      // forward pass
+      // forward pass through all layers
       INDArray outputLastLayer = features;
       for (ILayer layer : layerList) {
         if (layer == outputLayer) {
@@ -178,13 +178,13 @@ public class NeuralNetwork implements Network {
                 totalIterations-1, features.columns(), outputLayer.getTotalError());
       }
 
-      // back propagation
+      // back propagation through all layers
       INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(true));
       for (int i=layerList.size()-2;i>=0;i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
       }
 
-      // update parameters
+      // update parameters of all layers
       INDArray lastLayerActivation = features;
       for (ILayer layer : layerList) {
         layer.updateWeights(lastLayerActivation, learningRate);
