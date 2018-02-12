@@ -1,7 +1,6 @@
 package fko.nnplayground.MinstNN;
 
 import fko.nnplayground.API.ILayer;
-import org.apache.commons.math3.util.FastMath;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
@@ -25,6 +24,8 @@ public class Layer implements ILayer {
 
   private Activations activationFunction;
 
+  private final WeightInitializer.WeightInit weightInit;
+
   private INDArray weightsMatrix = null;
   private INDArray biasMatrix = null;
 
@@ -36,9 +37,13 @@ public class Layer implements ILayer {
 
   private INDArray previousLayerError; // error on the previous layer
 
-  public Layer(final int inputSize, final int outputSize, final Activations activationFunction, final int seed) {
+  private double leakyReLUalpha;
+
+
+  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activations activationFunction, final int seed) {
     this.inputSize = inputSize;
     this.outputSize = outputSize;
+    this.weightInit = weightInit;
     this.activationFunction = activationFunction;
     this.seed = seed;
 
@@ -46,15 +51,10 @@ public class Layer implements ILayer {
   }
 
   private void initWeights() {
-    // XAVIER initialization:
-    // ret = Nd4j.randn(order, shape).muli(FastMath.sqrt(2.0 / (fanIn + fanOut)));
-    // Where fanIn(k) would be the number of units sending input to k, and fanOut(k)
-    // would be the number of units receiving output from k.
-    // fanIn = input length, fanOut = input length next layer (outputSize of next layer)
-    weightsMatrix = Nd4j.randn(outputSize, inputSize, seed)
-            .muli(FastMath.sqrt(2.0 / (inputSize + outputSize)));
-    biasMatrix = Nd4j.zeros(outputSize, 1);
+    weightsMatrix = WeightInitializer.initWeights(weightInit, outputSize, inputSize, seed);
+    biasMatrix = WeightInitializer.initWeights(WeightInitializer.WeightInit.ZERO, outputSize, 1, seed);
   }
+
 
   @Override
   public INDArray forwardPass(final INDArray outputLastLayer) {
@@ -94,13 +94,19 @@ public class Layer implements ILayer {
         out = Transforms.pow(Transforms.exp(in.mul(-1)).add(1), -1);
         break;
       case TANH:
-        out = Transforms.tanh(in);
+        //out = Transforms.tanh(in);
+        out = Transforms.pow(Transforms.exp(in.mul(-2)).add(1), -1).mul(2).sub(1);
         break;
       case RELU:
-        out = Transforms.relu(in);
+        //out = Transforms.relu(in);
+        out = Transforms.max(in, 0);
         break;
       case LEAKYRELU:
-        out = Transforms.leakyRelu(in);
+        leakyReLUalpha = 1e-2d;
+        //out = Transforms.leakyRelu(in);
+        out = in.dup();
+        BooleanIndexing.applyWhere(out, Conditions.lessThanOrEqual(0),
+                input -> leakyReLUalpha * input.doubleValue());
         break;
       case SOFTMAX:
         // Exercise to calculate this manually instead of library call
@@ -221,4 +227,20 @@ public class Layer implements ILayer {
   public INDArray getPreviousLayerError() {
     return previousLayerError.dup();
   }
+
+  @Override
+  public double getLeakyReLUalpha() {
+    return leakyReLUalpha;
+  }
+
+  @Override
+  public void setLeakyReLUalpha(final double leakyReLUalpha) {
+    this.leakyReLUalpha = leakyReLUalpha;
+  }
+
+  @Override
+  public WeightInitializer.WeightInit getWeightInit() {
+    return weightInit;
+  }
+
 }

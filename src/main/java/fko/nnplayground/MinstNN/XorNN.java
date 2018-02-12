@@ -1,9 +1,6 @@
 package fko.nnplayground.MinstNN;
 
-import fko.nnplayground.API.ILayer;
-import fko.nnplayground.API.IOutputLayer;
 import fko.nnplayground.API.Network;
-import org.deeplearning4j.eval.Evaluation;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -71,15 +68,16 @@ public class XorNN {
     Network neuralNetwork = new NeuralNetwork(2, 1, 1, 2, seed);
 
     // layer (hidden layer)
-    neuralNetwork.addLayer(new Layer(2, 32, Activations.SIGMOID, seed));
+    neuralNetwork.addLayer(new Layer(2, 32,
+            WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed));
     // output layer
-    neuralNetwork.addLayer(new OutputLayer(32, 2, labels.transpose(), Activations.SIGMOID, seed));
+    neuralNetwork.addLayer(new OutputLayer(32, 2, labels.transpose(),
+            WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed));
 
     int nEpochs = 1;
     int iterations = 50000;
     neuralNetwork.setLearningRate(1d);
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
-
   }
 }

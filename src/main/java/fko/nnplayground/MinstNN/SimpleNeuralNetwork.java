@@ -155,9 +155,9 @@ public class SimpleNeuralNetwork implements Network {
   private void optimize(final INDArray features, final INDArray labels) {
 
     // layer 1 (hidden layer)
-    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, Activations.SIGMOID, seed);
+    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed);
     // layer 2 (output layer)
-    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, labels, Activations.SIGMOID, seed);
+    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, labels, WeightInitializer.WeightInit.XAVIER, Activations.SIGMOID, seed);
 
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {

@@ -20,8 +20,8 @@ public class OutputLayer extends Layer implements IOutputLayer {
   private double totalError;
 
 
-  public OutputLayer(final int inputSize, final int outputSize, final INDArray labels, final Activations activationFunction, final int seed) {
-    super(inputSize, outputSize, activationFunction, seed);
+  public OutputLayer(final int inputSize, final int outputSize, final INDArray labels, final WeightInitializer.WeightInit weightInit, final Activations activationFunction, final int seed) {
+    super(inputSize, outputSize, weightInit, activationFunction, seed);
     this.labels = labels;
   }
 

@@ -1,6 +1,7 @@
 package fko.nnplayground.API;
 
 import fko.nnplayground.MinstNN.Activations;
+import fko.nnplayground.MinstNN.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 public interface ILayer {
@@ -34,7 +35,8 @@ public interface ILayer {
    */
 
 
-  abstract INDArray getActivation();
+  WeightInitializer.WeightInit getWeightInit();
+  INDArray getActivation();
 
   INDArray getWeightsMatrix();
   INDArray getBiasMatrix();
@@ -51,4 +53,6 @@ public interface ILayer {
 
   INDArray getPreviousLayerError();
 
+  double getLeakyReLUalpha();
+  void setLeakyReLUalpha(double leakyReLUalpha);
 }
