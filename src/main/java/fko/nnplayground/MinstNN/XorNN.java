@@ -71,17 +71,15 @@ public class XorNN {
     Network neuralNetwork = new NeuralNetwork(2, 1, 1, 2, seed);
 
     // layer (hidden layer)
-    neuralNetwork.addLayer(new Layer(2, 16, Activations.SIGMOID, seed));
-    neuralNetwork.addLayer(new Layer(16, 16, Activations.SIGMOID, seed));
+    neuralNetwork.addLayer(new Layer(2, 32, Activations.SIGMOID, seed));
     // output layer
-    neuralNetwork.addLayer(new OutputLayer(16, 2, labels.transpose(), Activations.SIGMOID, seed));
+    neuralNetwork.addLayer(new OutputLayer(32, 2, labels.transpose(), Activations.SIGMOID, seed));
 
     int nEpochs = 1;
     int iterations = 50000;
-    neuralNetwork.setLearningRate(0.1d);
+    neuralNetwork.setLearningRate(1d);
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
-
 
   }
 }
