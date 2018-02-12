@@ -6,31 +6,28 @@ import fko.nnplayground.API.Network;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.indexing.BooleanIndexing;
-import org.nd4j.linalg.indexing.conditions.Conditions;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static org.nd4j.linalg.ops.transforms.Transforms.exp;
-
 /** SimpleNeuralNetwork */
-public class SimpleNeuralNetwork implements Network {
+public class NeuralNetwork implements Network {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SimpleNeuralNetwork.class);
+  private static final Logger LOG = LoggerFactory.getLogger(NeuralNetwork.class);
 
   private final int inputLength;
   private final int nLabels;
   private final int seed;
 
-  private int sizeHiddenLayer;
   private int epochs;
   private int iterations;
   private double learningRate;
 
   private int totalIterations;
+
+  private List<ILayer> layerList = new ArrayList<>();
 
   /**
    * TODO: add Regularization
@@ -41,32 +38,22 @@ public class SimpleNeuralNetwork implements Network {
    * @param width
    * @param channels
    * @param nLabels
-   * @param sizeHiddenLayer
    * @param seed
    */
-  public SimpleNeuralNetwork(
+  public NeuralNetwork(
       final int height,
       final int width,
       final int channels,
       int nLabels,
-      int sizeHiddenLayer,
       int seed) {
 
-    this(height * width * channels, nLabels, sizeHiddenLayer, seed);
+    this(height * width * channels, nLabels, seed);
   }
 
-  public SimpleNeuralNetwork(
-      final int inputLength, final int nLabels, final int sizeHiddenLayer, final int seed) {
-
+  public NeuralNetwork(final int inputLength, final int nLabels, final int seed) {
     this.inputLength = inputLength;
     this.nLabels = nLabels;
-    this.sizeHiddenLayer = sizeHiddenLayer;
     this.seed = seed;
-
-    // defaults
-    epochs = 1;
-    iterations = 1;
-    learningRate = 0.1d;
   }
 
   /**
@@ -153,18 +140,37 @@ public class SimpleNeuralNetwork implements Network {
    * @param labels
    */
   private void optimize(final INDArray features, final INDArray labels) {
+    // we need at least one layer
+    if (layerList.isEmpty()) {
+      final IllegalStateException e = new IllegalStateException("No layers");
+      LOG.error("Cannot train without layers.", e);
+      throw e;
+    }
 
-    // layer 1 (hidden layer)
-    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, Activations.SIGMOID, seed);
-    // layer 2 (output layer)
-    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, labels, Activations.SIGMOID, seed);
+    // last layer needs to be output layer
+    ILayer tmp = layerList.get(layerList.size() - 1);
+    IOutputLayer outputLayer = null;
+
+    if (tmp instanceof IOutputLayer) {
+      outputLayer = (IOutputLayer) tmp;
+    } else {
+      final IllegalStateException e = new IllegalStateException("Last layer not IOutputLayer");
+      LOG.error("Last layer needs to be IOutputLayer", e);
+      throw e;
+    }
 
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {
 
       // forward pass
-      final INDArray outputLastLayer = layer_1.forwardPass(features);
-      outputLayer.forwardPass(outputLastLayer, true);
+      INDArray outputLastLayer = features;
+      for (ILayer layer : layerList) {
+        if (layer == outputLayer) {
+          outputLastLayer = outputLayer.forwardPass(outputLastLayer, true);
+        } else {
+          outputLastLayer = layer.forwardPass(outputLastLayer);
+        }
+      }
 
       // output loss
       if (totalIterations++ % 100 == 0) {
@@ -173,32 +179,38 @@ public class SimpleNeuralNetwork implements Network {
       }
 
       // back propagation
-      final INDArray errorPreviousLayer = outputLayer.backwardPass();
-      layer_1.backwardPass(errorPreviousLayer);
+      INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(true));
+      for (int i=layerList.size()-2;i>=0;i--) {
+        errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
+      }
 
       // update parameters
-      outputLayer.updateWeights(layer_1.getActivation(), learningRate);
-      layer_1.updateWeights(features, learningRate);
-
+      INDArray lastLayerActivation = features;
+      for (ILayer layer : layerList) {
+        layer.updateWeights(lastLayerActivation, learningRate);
+        lastLayerActivation = layer.getActivation();
+      }
     }
   }
 
+  @Override
   public double getLearningRate() {
     return learningRate;
   }
 
+  @Override
   public void setLearningRate(final double learningRate) {
     this.learningRate = learningRate;
   }
 
-
   @Override
   public List<ILayer> getLayerList() {
-    return null;
+    return layerList;
   }
 
   @Override
   public void addLayer(final Layer layer) {
-
+    layerList.add(layer);
   }
+
 }

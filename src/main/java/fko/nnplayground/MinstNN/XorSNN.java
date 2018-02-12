@@ -1,9 +1,6 @@
 package fko.nnplayground.MinstNN;
 
-import fko.nnplayground.API.ILayer;
-import fko.nnplayground.API.IOutputLayer;
 import fko.nnplayground.API.Network;
-import org.deeplearning4j.eval.Evaluation;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -20,7 +17,7 @@ import org.nd4j.linalg.factory.Nd4j;
  *
  * @author Peter Großmann
  */
-public class XorNN {
+public class XorSNN {
   public static void main(String[] args) {
 
     // determines what ND4j uses internally as precision for floating point numbers
@@ -68,20 +65,12 @@ public class XorNN {
 
     final int seed = 1234;
 
-    Network neuralNetwork = new NeuralNetwork(2, 1, 1, 2, seed);
-
-    // layer (hidden layer)
-    neuralNetwork.addLayer(new Layer(2, 16, Activations.SIGMOID, seed));
-    neuralNetwork.addLayer(new Layer(16, 16, Activations.SIGMOID, seed));
-    // output layer
-    neuralNetwork.addLayer(new OutputLayer(16, 2, labels.transpose(), Activations.SIGMOID, seed));
+    SimpleNeuralNetwork neuralNetwork = new SimpleNeuralNetwork(2, 1, 1, 2, 32, seed);
 
     int nEpochs = 1;
     int iterations = 50000;
     neuralNetwork.setLearningRate(0.1d);
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
-
-
   }
 }

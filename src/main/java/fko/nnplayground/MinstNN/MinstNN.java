@@ -1,5 +1,6 @@
 package fko.nnplayground.MinstNN;
 
+import fko.nnplayground.API.Network;
 import fko.nnplayground.util.DataUtilities;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;
@@ -74,17 +75,12 @@ public class MinstNN {
     DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, outputNum);
     testIter.setPreProcessor(scaler); // same normalization for better results
 
-    final int sizeHiddenLayer = 1000;
-    SimpleNeuralNetwork snn =
-        new SimpleNeuralNetwork(height, width, channels, outputNum, sizeHiddenLayer, seed);
+    Network snn =
+        new NeuralNetwork(height, width, channels, outputNum, seed);
 
     int nEpochs = 100;
     int iterations = 10;
     snn.setLearningRate(1e-3d);
-    snn.setUseRegularization(false);
-    snn.setRegularizationStrength(0.001d);
-    snn.setActivationHiddenLayer(Activations.SIGMOID);
-    snn.setActivationOutputLayer(Activations.SIGMOID);
 
     snn.train(trainIter, nEpochs, iterations);
   }

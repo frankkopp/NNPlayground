@@ -103,7 +103,7 @@ class TwoLayerNet(object):
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
-    # grads['W1'] should store the gradient on W1, and be a matrix of same size #
+    # grads['W1'] should store the gradient on W1, and be a matrix of same outputSize #
     #############################################################################
     pass
     #############################################################################
