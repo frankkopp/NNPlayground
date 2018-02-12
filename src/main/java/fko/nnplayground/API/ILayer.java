@@ -4,6 +4,8 @@ import fko.nnplayground.nn.Activation;
 import fko.nnplayground.nn.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
+import java.io.DataOutputStream;
+
 /**
  * TODO docs
  */
@@ -36,7 +38,6 @@ public interface ILayer {
   /*
    * Getters and Setters
    */
-
 
   WeightInitializer.WeightInit getWeightInit();
   INDArray getActivation();
