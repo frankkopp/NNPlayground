@@ -1,3 +1,28 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018 Frank Kopp
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package fko.nnplayground.nn;
 
 import fko.nnplayground.API.ILayer;
@@ -33,6 +58,12 @@ public class NeuralNetwork implements Network {
   private double learningRate;
 
   private int totalIterations;
+  private int truePositives;
+  private int trueNegatives;
+  private int falsePositives;
+  private int falseNegatives;
+  private int totalPositives;
+  private int totalNegatives;
 
   /**
    * TODO: add evaluation TODO: save and load train data TODO: add Regularization TODO: add other
@@ -165,11 +196,7 @@ public class NeuralNetwork implements Network {
       // forward pass through all layers
       INDArray outputLastLayer = features;
       for (ILayer layer : layerList) {
-        if (layer == outputLayer) {
-          outputLastLayer = outputLayer.forwardPass(outputLastLayer, true);
-        } else {
           outputLastLayer = layer.forwardPass(outputLastLayer);
-        }
       }
 
       // output loss
@@ -178,11 +205,11 @@ public class NeuralNetwork implements Network {
             "Loss at iteration {} (batch size {}) = {}",
             totalIterations - 1,
             features.columns(),
-            outputLayer.getTotalError());
+            outputLayer.computeTotalError(labels, true));
       }
 
       // back propagation through all layers
-      INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(true));
+      INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(labels, true));
       for (int i = layerList.size() - 2; i >= 0; i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
       }
@@ -197,8 +224,43 @@ public class NeuralNetwork implements Network {
   }
 
   @Override
-  public void eval(final DataSet dataSet) {
+  public void eval(final DataSetIterator dataSetIterator) {
+    truePositives = 0;
+    trueNegatives = 0;
+    falsePositives = 0;
+    falseNegatives = 0;
+    totalPositives = 0;
+    totalNegatives = 0;
 
+    if (dataSetIterator.resetSupported()) {
+      dataSetIterator.reset();
+    }
+    // Batch
+    while (dataSetIterator.hasNext()) { // one batch
+      // get the next batch of examples
+      DataSet batch = dataSetIterator.next();
+      // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
+      // also needs to be transposed so the numExp are columns and inputData is rows
+      evalBatch(batch);
+    }
+    printEvaluation();
+  }
+
+  @Override
+  public void eval(final DataSet dataSet) {
+    truePositives = 0;
+    trueNegatives = 0;
+    falsePositives = 0;
+    falseNegatives = 0;
+    totalPositives = 0;
+    totalNegatives = 0;
+
+    evalBatch(dataSet);
+
+    printEvaluation();
+  }
+
+  private void evalBatch(final DataSet dataSet) {
     List<INDArray> realOutputs = new ArrayList<>();
     List<INDArray> guesses = new ArrayList<>();
 
@@ -216,45 +278,29 @@ public class NeuralNetwork implements Network {
       guesses.add(prediction);
     }
 
-    int truePositives = 0;
-    int trueNegatives = 0;
-    int falsePositives = 0;
-    int falseNegatives = 0;
-
     final int nLabels = dataSet.getLabels().transpose().rows();
 
-    System.out.println("Result:");
     for (int i = 0; i < realOutputs.size(); i++) {
-      System.out.printf(
-          "Example %d: Correct = %s Predicted = %s ",
-          i, realOutputs.get(i).ravel(), guesses.get(i).ravel());
-
-      // argmax
-      final int actual = (int) Nd4j.argMax(realOutputs.get(i), 1).getDouble(0);
-      final int predicted = (int) Nd4j.argMax(guesses.get(i), 1).getDouble(0);
+      // argmax - currently we only check if the highest prediction is correct
+      final int actual = (int) Nd4j.argMax(realOutputs.get(i), 0).getDouble(0);
+      final int predicted = (int) Nd4j.argMax(guesses.get(i), 0).getDouble(0);
       if (actual == predicted) {
-        System.out.println("CORRECT");
+        LOG.debug("Example: CORRECT Actual = {} Predicted = {} ",
+                realOutputs.get(i).ravel(), guesses.get(i).ravel());
         truePositives++;
         trueNegatives += nLabels - 1;
       } else {
-        System.out.println("INCORRECT");
+        LOG.debug("Example: INCORRECT Actual = {} Predicted = {} ",
+                realOutputs.get(i).ravel(), guesses.get(i).ravel());
         falsePositives++;
         falseNegatives++;
         trueNegatives += nLabels - 2;
       }
     }
-    System.out.printf("True Positives  %d%nFalse Positives %d%nTrue Negatives  %d%nFalse Negatives %d%n",
-            truePositives, falsePositives, trueNegatives, falseNegatives);
 
-    int totalPositives = dataSet.numExamples(); // number of examples as each examples has one positive
-    int totalNegatives = dataSet.numExamples() // number off examples time number of labels - 1 as one is positive
-            * (nLabels -1);
-
-    System.out.printf("Total Positives: %d Total Negatives: %d%n", totalPositives, totalNegatives);
-    System.out.printf("Recall   : %.2f%n", (double) truePositives/totalPositives);
-    System.out.printf("Precision: %.2f%n", (double) truePositives/(totalPositives+falsePositives));
-    System.out.printf("Accuracy : %.2f%n", (double) (truePositives+trueNegatives)/(totalPositives+totalNegatives));
-    System.out.printf("F1Score  : %.2f%n", (double) (2*truePositives)/(2*truePositives + falsePositives + falseNegatives));
+    totalPositives += dataSet.numExamples(); // number of examples as each examples has one positive
+    totalNegatives += dataSet.numExamples()
+            * (nLabels - 1); // number off examples time number of labels - 1 as one is positive
   }
 
   @Override
@@ -265,6 +311,16 @@ public class NeuralNetwork implements Network {
       outputLastLayer = layer.forwardPass(outputLastLayer);
     }
     return outputLastLayer;
+  }
+
+  private void printEvaluation() {
+    System.out.printf("True Positives  %d%nFalse Positives %d%nTrue Negatives  %d%nFalse Negatives %d%n",
+            truePositives, falsePositives, trueNegatives, falseNegatives);
+    System.out.printf("Total Positives: %,d%nTotal Negatives: %,d%n", totalPositives, totalNegatives);
+    System.out.printf("Recall   : %.2f%n", (double) truePositives / totalPositives);
+    System.out.printf("Precision: %.2f%n", (double) truePositives /(truePositives + falsePositives));
+    System.out.printf("Accuracy : %.2f%n", (double) (truePositives + trueNegatives)/(totalPositives + totalNegatives));
+    System.out.printf("F1Score  : %.2f%n", (double) (2* truePositives)/(2* truePositives + falsePositives + falseNegatives));
   }
 
   @Override

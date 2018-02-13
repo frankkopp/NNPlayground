@@ -1,3 +1,28 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018 Frank Kopp
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package fko.nnplayground.API;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -12,19 +37,19 @@ public interface IOutputLayer extends ILayer {
    * So there is no need to use computeError or computeTotalError after this. Just use get...()
    * @see fko.nnplayground.API.ILayer#forwardPass(INDArray)
    */
-  INDArray forwardPass(INDArray outputLastLayer, boolean computeError);
+  INDArray forwardPass(INDArray outputLastLayer);
 
   /**
    * @param training whether we compute this during training or outside of training
    * @return the array of errors for each example
    */
-  INDArray computeError(boolean training);
+  INDArray computeError(INDArray labels, boolean training);
 
   /**
    * @param training whether we compute this during training or outside of training
    * @return the array of errors for all examples (total loss)
    */
-  double computeTotalError(boolean training);
+  double computeTotalError(INDArray labels, boolean training);
 
   /**
    * Uses the internal error calculated based on the labels
@@ -32,9 +57,6 @@ public interface IOutputLayer extends ILayer {
    * @return
    */
   INDArray backwardPass();
-
-  INDArray getError();
-  double getTotalError();
 
   INDArray getLabels();
 
