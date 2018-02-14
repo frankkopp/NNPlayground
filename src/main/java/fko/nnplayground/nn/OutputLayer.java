@@ -39,41 +39,61 @@ public class OutputLayer extends Layer implements IOutputLayer {
   private static final Logger LOG = LoggerFactory.getLogger(OutputLayer.class);
 
   private INDArray labels;
-  private INDArray error;
-  private double totalError;
+  private double cost;
+  private INDArray gradientC;
 
   public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
     super(inputSize, outputSize, weightInit, activationFunction, seed);
   }
 
+  public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, double regStrength, final int seed) {
+    super(inputSize, outputSize, weightInit, activationFunction, regStrength, seed);
+  }
+
   @Override
   public INDArray forwardPass(final INDArray outputLastLayer) {
     super.forwardPass(outputLastLayer);
+    // TODO: if SOFTMAX compute class props
     return getActivation();
   }
 
   @Override
+  public INDArray computeOutputError(final INDArray labels, final int nExamples, final boolean training) {
+    // TODO: this could be cached
+    this.labels = labels;
+
+    // TODO: implement different loss functions C
+
+    // quadratic cost function
+    // (1/2n) * ∑ ||y(x)-aL(x)||^2
+    final double unRegCost = Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
+    final double regularization =
+        0.5 * (regLamba / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
+    this.cost = unRegCost + regularization;
+
+    // this is the gradient/derivative of the quadratic cost function!
+    // (aL−y)
+    // the derivative of cost also has a 1/n - this is done in the weights update to also cover the Bias
+    // TODO: add regularization to this
+     gradientC = getActivation().sub(labels);
+
+     // what is this??? // Mean Square gradientC MSE??
+     //totalError = Transforms.abs(gradientC).meanNumber().doubleValue();
+
+    return gradientC;
+  }
+
+  @Override
+  public double computeCost(final INDArray labels, final int nExamples, final boolean training) {
+    // TODO: this could be cached
+    computeOutputError(labels, nExamples, training);
+    return cost;
+  }
+
+  @Override
   public INDArray backwardPass() {
-    super.backwardPass(error);
+    super.backwardPass(gradientC);
     return getPreviousLayerError();
-  }
-
-  @Override
-  public INDArray computeError(final INDArray labels, final boolean training) {
-    // TODO: this could be cached
-    this.labels = labels;
-    error = getActivation().sub(labels);
-    totalError = Transforms.abs(error).meanNumber().doubleValue();
-    return error;
-  }
-
-  @Override
-  public double computeTotalError(final INDArray labels, final boolean training) {
-    // TODO: this could be cached
-    this.labels = labels;
-    error = getActivation().sub(labels);
-    totalError = Transforms.abs(error).meanNumber().doubleValue();
-    return totalError;
   }
 
   @Override

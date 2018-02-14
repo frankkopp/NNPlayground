@@ -29,8 +29,6 @@ import fko.nnplayground.nn.Activation;
 import fko.nnplayground.nn.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
-import java.io.DataOutputStream;
-
 /**
  * TODO docs
  */
@@ -44,9 +42,9 @@ public interface ILayer {
   INDArray forwardPass(INDArray outputLastLayer);
 
   /**
-   * @return the output of the layer before the nonLin activation function
+   * @return the z_output of the layer before the nonLin activation function
    */
-  INDArray getOutput();
+  INDArray getZ_output();
 
   /**
    * @param error of this layer (back propagated from next layer)
@@ -56,9 +54,10 @@ public interface ILayer {
 
   /**
    * @param activationPreviousLayer
+   * @param nExamples
    * @param learningRate the factor for update steps on the weights
    */
-  void updateWeights(final INDArray activationPreviousLayer, double learningRate);
+  void updateWeights(final INDArray activationPreviousLayer, final int nExamples, double learningRate);
 
   /*
    * Getters and Setters
@@ -78,8 +77,14 @@ public interface ILayer {
   int getInputSize();
   int getOutputSize();
 
-  INDArray getLayerGradient();
+  INDArray getError();
 
   INDArray getPreviousLayerError();
 
+  /**
+   * Regularization strength
+   * @param regLamba set regularization strength. Default 0.001. Set to 0 to turn off regularization.
+   */
+  void setRegLamba(double regLamba);
+  double getRegLamba();
 }

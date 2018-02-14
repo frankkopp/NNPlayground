@@ -51,6 +51,7 @@ public class Activation {
         break;
       case SIGMOID:
         //out = Transforms.sigmoid(in);
+        // sigmoid(x) = 1 / 1 + (e^-x)
         out = Transforms.pow(Transforms.exp(in.mul(-1)).add(1), -1);
         break;
       case TANH:
@@ -83,7 +84,7 @@ public class Activation {
 
         // softmax is a row operation so we need to transpose our
         // matrix before and the result after
-        // output = Transforms.softmax(output.transpose()).transpose();
+        // z_output = Transforms.softmax(z_output.transpose()).transpose();
         // hiddenOutput = Transforms.softmax(hiddenOutput);
         break;
       default:
@@ -117,7 +118,7 @@ public class Activation {
       case LEAKYRELU:
         dIn = Transforms.leakyReluDerivative(in, 0);
         break;
-//      case SOFTMAX: // only useful in output layer
+//      case SOFTMAX: // only useful in z_output layer
       // get the correct label matrix and transpose it - this creates a matrix
       // identical in shape to scores with 1 where the correct score should have been
       // pk−1(yi=k)
@@ -154,14 +155,14 @@ public class Activation {
 
     /**
      * Sigmoid or Logistic Activation Function
-     * Squish the output between 0 and 1
+     * Squish the z_output between 0 and 1
      * 1 / (1 + e^(-activation))
      */
     SIGMOID,
 
     /**
      * Tanh or hyperbolic tangent Activation Function
-     * Squish the output between -1 and 1
+     * Squish the z_output between -1 and 1
      * 1 - (2 / (e^2x - 1))
      */
     TANH,

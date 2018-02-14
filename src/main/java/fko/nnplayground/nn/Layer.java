@@ -30,8 +30,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataOutputStream;
-
 /**
  * Layer
  */
@@ -47,15 +45,16 @@ public class Layer implements ILayer {
 
   private final WeightInitializer.WeightInit weightInit;
 
-  private INDArray weightsMatrix;
-  private INDArray biasMatrix;
+  protected INDArray weightsMatrix;
+  protected INDArray biasMatrix;
 
-  private INDArray output; // before the non linearity function
-  private INDArray activation; // after the non linearity
+  protected INDArray z_output; // before the non linearity function
+  protected INDArray activation; // after the non linearity
 
-  private INDArray layerGradient; // gradient for layer
+  protected INDArray error; // gradient for layer
 
-  private INDArray previousLayerError; // error on the previous layer
+  protected INDArray previousLayerError; // error on the previous layer
+  protected double regLamba = 1e-3d; // default
 
   public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
     this.inputSize = inputSize;
@@ -67,35 +66,55 @@ public class Layer implements ILayer {
     weightsMatrix = WeightInitializer.initWeights(this.weightInit, this.outputSize, this.inputSize, this.seed);
     biasMatrix = WeightInitializer.initWeights(WeightInitializer.WeightInit.ZERO, this.outputSize, 1, this.seed);
 
-    LOG.debug("Created layer of type {}. InputSize: {} OutputSize: {} WeightInit: {} Activation: {}",
-            getClass().getSimpleName(), inputSize, outputSize, weightInit, activationFunction);
+    LOG.info("Created layer of type {}. InputSize: {} OutputSize: {} WeightInit: {} Activation: {} L2RegularizationStrength: {} ",
+            getClass().getSimpleName(), inputSize, outputSize, weightInit, activationFunction, regLamba);
   }
 
+  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final double regStrength, final int seed) {
+    this(inputSize, outputSize, weightInit, activationFunction, seed);
+    this.regLamba = regStrength;
+  }
+
+  /**
+   * http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
+   * @param outputLastLayer the input for the layer
+   * @return activation of this layer
+   * @see ILayer#forwardPass(INDArray)
+   */
   @Override
   public INDArray forwardPass(final INDArray outputLastLayer) {
-    final INDArray WdotOutput = weightsMatrix.mmul(outputLastLayer);
-    output = WdotOutput.addColumnVector(biasMatrix);
-    activation = Activation.applyActivation(activationFunction, output);
+    // z = Wx + b
+    z_output = weightsMatrix.mmul(outputLastLayer).addColumnVector(biasMatrix);
+    // a = nonLin(z)
+    activation = Activation.applyActivation(activationFunction, z_output);
     return getActivation();
   }
 
   @Override
-  public INDArray backwardPass(INDArray error) {
+  public INDArray backwardPass(INDArray gradient) {
+    // σ′(zl)
     final INDArray derivative = Activation.applyDerivative(activationFunction, activation);
-    layerGradient = error.mul(derivative);
-    previousLayerError = weightsMatrix.transpose().mmul(layerGradient);
+    // δl=((wl+1)T*δl+1) ⊙ σ′(zl)
+    error = gradient.mul(derivative);
+    // δl-l=((wl)T*δl)
+    previousLayerError = weightsMatrix.transpose().mmul(error);
     return getPreviousLayerError();
   }
 
   @Override
-  public void updateWeights(final INDArray activationPreviousLayer, final double learningRate) {
-    // full change of weights based on gradient and layer_1 output
-    final INDArray W2_delta = layerGradient.mmul(activationPreviousLayer.transpose());
+  public void updateWeights(final INDArray activationPreviousLayer, final int nExamples, final double learningRate) {
+    // Vanilla SGD update with L2 regularization for now
+    // TODO: more updater
+
+    // full change of weights based on gradient and layer_1 z_output
+    // regularization - learningRate*delta
+    // (1−ηλ/n)*w     − η * ∂C0/∂w
+    final INDArray W_delta = error.mmul(activationPreviousLayer.transpose());
     // multiplied with learning rate to adjust step size
-    final INDArray W2_change = W2_delta.mul(learningRate);
-    // update W2
-    weightsMatrix.subi(W2_change);
-    biasMatrix.subi(layerGradient.sum(1).mul(learningRate));
+    final INDArray W_change = W_delta.mul(learningRate/nExamples);
+    // update W2 (incl. regularization)
+    weightsMatrix.muli(1-((learningRate*regLamba)/nExamples)).subi(W_change);
+    biasMatrix.subi(error.sum(1).mul(learningRate/nExamples));
   }
 
   @Override
@@ -124,8 +143,8 @@ public class Layer implements ILayer {
   }
 
   @Override
-  public INDArray getOutput() {
-    return output.dup();
+  public INDArray getZ_output() {
+    return z_output.dup();
   }
 
   @Override
@@ -144,13 +163,23 @@ public class Layer implements ILayer {
   }
 
   @Override
-  public INDArray getLayerGradient() {
-    return layerGradient.dup();
+  public INDArray getError() {
+    return error.dup();
   }
 
   @Override
   public INDArray getPreviousLayerError() {
     return previousLayerError.dup();
+  }
+
+  @Override
+  public void setRegLamba(final double regLamba) {
+    this.regLamba = regLamba;
+  }
+
+  @Override
+  public double getRegLamba() {
+    return regLamba;
   }
 
   @Override

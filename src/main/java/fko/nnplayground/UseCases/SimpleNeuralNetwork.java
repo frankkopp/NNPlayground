@@ -28,7 +28,10 @@ package fko.nnplayground.UseCases;
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.IOutputLayer;
 import fko.nnplayground.API.Network;
-import fko.nnplayground.nn.*;
+import fko.nnplayground.nn.Activation;
+import fko.nnplayground.nn.Layer;
+import fko.nnplayground.nn.OutputLayer;
+import fko.nnplayground.nn.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
@@ -36,8 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-
-import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 /** SimpleNeuralNetwork */
 public class SimpleNeuralNetwork implements Network {
@@ -56,10 +57,9 @@ public class SimpleNeuralNetwork implements Network {
   private int totalIterations;
 
   /**
-   * TODO: add Regularization
-   * TODO: generalize for many layers
-   * TODO: add other activations / SOFTMAX
+   * TODO: add Regularization TODO: generalize for many layers TODO: add other activations / SOFTMAX
    * TODO: add listener
+   *
    * @param height
    * @param width
    * @param channels
@@ -116,8 +116,8 @@ public class SimpleNeuralNetwork implements Network {
         DataSet batch = dataSetIter.next();
         // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
         // also needs to be transposed so the numExp are columns and inputData is rows
-        final INDArray features = batch.getFeatures()
-                .reshape(batch.numExamples(), inputLength).transpose();
+        final INDArray features =
+            batch.getFeatures().reshape(batch.numExamples(), inputLength).transpose();
         final INDArray labels = batch.getLabels().transpose();
         optimize(features, labels);
       }
@@ -138,8 +138,8 @@ public class SimpleNeuralNetwork implements Network {
     totalIterations = 0;
     // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
     // also needs to be transposed so the numExp are columns and inputData is rows
-    final INDArray features = dataSet.getFeatures()
-            .reshape(dataSet.numExamples(), inputLength).transpose();
+    final INDArray features =
+        dataSet.getFeatures().reshape(dataSet.numExamples(), inputLength).transpose();
     final INDArray labels = dataSet.getLabels().transpose();
 
     // Epoch
@@ -172,15 +172,30 @@ public class SimpleNeuralNetwork implements Network {
 
   /**
    * Runs the optimization loop - forward pass, loss, back propagation, update params
+   *
    * @param features
    * @param labels
    */
   private void optimize(final INDArray features, final INDArray labels) {
 
     // layer 1 (hidden layer)
-    final ILayer layer_1 = new Layer(inputLength, sizeHiddenLayer, WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
-    // layer 2 (output layer)
-    final IOutputLayer outputLayer = new OutputLayer(sizeHiddenLayer, nLabels, WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
+    final ILayer layer_1 =
+        new Layer(
+            inputLength,
+            sizeHiddenLayer,
+            WeightInitializer.WeightInit.XAVIER,
+            Activation.Activations.SIGMOID,
+            seed);
+    // layer 2 (z_output layer)
+    final IOutputLayer outputLayer =
+        new OutputLayer(
+            sizeHiddenLayer,
+            nLabels,
+            WeightInitializer.WeightInit.XAVIER,
+            Activation.Activations.SIGMOID,
+            seed);
+
+    final int nExamples = features.columns();
 
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {
@@ -189,10 +204,13 @@ public class SimpleNeuralNetwork implements Network {
       final INDArray outputLastLayer = layer_1.forwardPass(features);
       outputLayer.forwardPass(outputLastLayer);
 
-      // output loss
+      // z_output loss
       if (totalIterations++ % 100 == 0) {
-        LOG.info("Loss at iteration {} (batch size {}) = {}",
-                totalIterations-1, features.columns(), outputLayer.computeTotalError(labels, true));
+        LOG.info(
+            "Loss at iteration {} (batch size {}) = {}",
+            totalIterations - 1,
+            features.columns(),
+            outputLayer.computeCost(labels, features.columns(), true));
       }
 
       // back propagation
@@ -200,9 +218,8 @@ public class SimpleNeuralNetwork implements Network {
       layer_1.backwardPass(errorPreviousLayer);
 
       // update parameters
-      outputLayer.updateWeights(layer_1.getActivation(), learningRate);
-      layer_1.updateWeights(features, learningRate);
-
+      outputLayer.updateWeights(layer_1.getActivation(), nExamples, learningRate);
+      layer_1.updateWeights(features, nExamples, learningRate);
     }
   }
 
@@ -230,7 +247,6 @@ public class SimpleNeuralNetwork implements Network {
     this.learningRate = learningRate;
   }
 
-
   @Override
   public void saveToFile(final String nnSaveFile) {
     // not implemented
@@ -243,11 +259,17 @@ public class SimpleNeuralNetwork implements Network {
 
   @Override
   public List<ILayer> getLayerList() {
+    // not implemented
     return null;
   }
 
   @Override
   public void addLayer(final Layer layer) {
+    // not implemented
+  }
 
+  @Override
+  public void addLayer(final Layer... layer) {
+    // not implemented
   }
 }

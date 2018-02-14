@@ -38,9 +38,10 @@ public interface Network {
 
   void loadFromFile(String nnSaveFile);
 
-  abstract List<ILayer> getLayerList();
+  List<ILayer> getLayerList();
 
-  abstract void addLayer(Layer layer);
+  void addLayer(Layer layer);
+  void addLayer(Layer... layer);
 
   void train(DataSetIterator dataSetIter, int epochs, int iterations);
 
@@ -49,9 +50,9 @@ public interface Network {
 
   INDArray predict(INDArray features);
 
-  abstract double getLearningRate();
+  double getLearningRate();
 
-  abstract void setLearningRate(double learningRate);
+  void setLearningRate(double learningRate);
 
   void eval(DataSetIterator dataSetIterator);
   void eval(DataSet dataSet);

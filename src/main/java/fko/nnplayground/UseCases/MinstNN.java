@@ -62,7 +62,7 @@ public class MinstNN {
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 32;
+    int batchSize = 512;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -78,7 +78,7 @@ public class MinstNN {
     }
 
     // vectorization of train data
-    File trainData = new File(basePath + "/mnist_png/testing"); // TODO changed for debugging
+    File trainData = new File(basePath + "/mnist_png/training"); // TODO changed for debugging
     LOG.debug("Preparing training data...{}", trainData);
     FileSplit trainSplit = new FileSplit(trainData, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
     ParentPathLabelGenerator labelMaker =
@@ -101,13 +101,13 @@ public class MinstNN {
     DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, outputNum);
     testIter.setPreProcessor(scaler); // same normalization for better results
 
-    Network neuralNetwork = new NeuralNetwork(height, width, channels, outputNum, seed);
+    Network neuralNetwork = new NeuralNetwork(height, width, channels, outputNum);
 
     // layer (hidden layer)
     neuralNetwork.addLayer(
             new Layer(height*width*channels, 1000,
                     WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
-    // output layer
+    // z_output layer
     neuralNetwork.addLayer(
             new OutputLayer(1000, outputNum,
                     WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));

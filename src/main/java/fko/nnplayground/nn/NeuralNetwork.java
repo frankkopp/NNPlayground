@@ -66,22 +66,21 @@ public class NeuralNetwork implements Network {
   private int totalNegatives;
 
   /**
-   * TODO: add evaluation TODO: save and load train data TODO: add Regularization TODO: add other
-   * activations / SOFTMAX TODO: add listener
-   *
-   * @param height
+   * TODO: improve evaluation
+   * TODO: save and load train data
+   * TODO: add SOFTMAX
+   * TODO: add listener
+   *  @param height
    * @param width
    * @param channels
    * @param nLabels
-   * @param seed
    */
   public NeuralNetwork(
-      final int height, final int width, final int channels, int nLabels, int seed) {
-
-    this(height * width * channels, nLabels, seed);
+          final int height, final int width, final int channels, int nLabels) {
+    this(height * width * channels, nLabels);
   }
 
-  public NeuralNetwork(final int inputLength, final int nLabels, final int seed) {
+  public NeuralNetwork(final int inputLength, final int nLabels) {
     this.inputLength = inputLength;
     this.outputLength = nLabels;
   }
@@ -178,7 +177,7 @@ public class NeuralNetwork implements Network {
       throw e;
     }
 
-    // last layer needs to be output layer
+    // last layer needs to be z_output layer
     ILayer tmp = layerList.get(layerList.size() - 1);
     IOutputLayer outputLayer = null;
 
@@ -190,26 +189,36 @@ public class NeuralNetwork implements Network {
       throw e;
     }
 
+    final int nExamples = features.columns();
+
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {
 
+      // BACKPROPAGATION ALGORITHM
+      // http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
+
       // forward pass through all layers
-      INDArray outputLastLayer = features;
+      INDArray activationLastLayer = features;
       for (ILayer layer : layerList) {
-          outputLastLayer = layer.forwardPass(outputLastLayer);
+          activationLastLayer = layer.forwardPass(activationLastLayer);
       }
 
-      // output loss
+      // z_output loss
       if (totalIterations++ % 100 == 0) {
         LOG.info(
             "Loss at iteration {} (batch size {}) = {}",
             totalIterations - 1,
-            features.columns(),
-            outputLayer.computeTotalError(labels, true));
+                nExamples,
+            outputLayer.computeCost(labels, nExamples, true));
       }
 
       // back propagation through all layers
-      INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeError(labels, true));
+      // http://neuralnetworksanddeeplearning.com/chap2.html#eqtnBP1
+      // BP1: δLj = (∂C/∂aLj) * σ′(zLj) [An equation for the error in the z_output layer, δL]
+      // BP2: δl= ((wl+1)T * δl+1) ⊙ σ′(zl) 8An equation for the error δl in terms of the error in the next layer, δl+1]
+      // BP3: ∂C / ∂blj = δlj [An equation for the rate of change of the cost with respect to any bias in the network]
+      // BP4: ∂C / ∂wljk = al−1k ⊙ δlj [An equation for the rate of change of the cost with respect to any weight in the network]
+      INDArray errorPreviousLayer = outputLayer.backwardPass(outputLayer.computeOutputError(labels, nExamples, true));
       for (int i = layerList.size() - 2; i >= 0; i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
       }
@@ -217,7 +226,7 @@ public class NeuralNetwork implements Network {
       // update parameters of all layers
       INDArray lastLayerActivation = features;
       for (ILayer layer : layerList) {
-        layer.updateWeights(lastLayerActivation, learningRate);
+        layer.updateWeights(lastLayerActivation, nExamples, learningRate);
         lastLayerActivation = layer.getActivation();
       }
     }
@@ -317,10 +326,10 @@ public class NeuralNetwork implements Network {
     System.out.printf("True Positives  %d%nFalse Positives %d%nTrue Negatives  %d%nFalse Negatives %d%n",
             truePositives, falsePositives, trueNegatives, falseNegatives);
     System.out.printf("Total Positives: %,d%nTotal Negatives: %,d%n", totalPositives, totalNegatives);
-    System.out.printf("Recall   : %.2f%n", (double) truePositives / totalPositives);
-    System.out.printf("Precision: %.2f%n", (double) truePositives /(truePositives + falsePositives));
-    System.out.printf("Accuracy : %.2f%n", (double) (truePositives + trueNegatives)/(totalPositives + totalNegatives));
-    System.out.printf("F1Score  : %.2f%n", (double) (2* truePositives)/(2* truePositives + falsePositives + falseNegatives));
+    System.out.printf("Recall   : %.4f%n", (double) truePositives / totalPositives);
+    System.out.printf("Precision: %.4f%n", (double) truePositives /(truePositives + falsePositives));
+    System.out.printf("Accuracy : %.4f%n", (double) (truePositives + trueNegatives)/(totalPositives + totalNegatives));
+    System.out.printf("F1Score  : %.4f%n", (double) (2* truePositives)/(2* truePositives + falsePositives + falseNegatives));
   }
 
   @Override
@@ -371,6 +380,12 @@ public class NeuralNetwork implements Network {
   public void addLayer(final Layer layer) {
     layerList.add(layer);
   }
+
+  @Override
+  public void addLayer(final Layer... layer) {
+    layerList.addAll(Arrays.asList(layer));
+  }
+
 
   @Override
   public String toString() {

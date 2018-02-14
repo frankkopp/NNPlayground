@@ -55,8 +55,8 @@ public class XorNN {
     // input-neurons each
     INDArray input = Nd4j.zeros(4, 2);
 
-    // corresponding list with expected output values, 4 training samples
-    // with data for 2 output-neurons each
+    // corresponding list with expected z_output values, 4 training samples
+    // with data for 2 z_output-neurons each
     INDArray labels = Nd4j.zeros(4, 2);
 
     // create first dataset
@@ -89,17 +89,20 @@ public class XorNN {
 
     final int seed = 1234;
 
-    Network neuralNetwork = new NeuralNetwork(2, 1, 1, 2, seed);
+    Network neuralNetwork = new NeuralNetwork(2, 2);
 
     // layer (hidden layer)
-    neuralNetwork.addLayer(new Layer(2, 32,
-            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
-    // output layer
-    neuralNetwork.addLayer(new OutputLayer(32,2,
-            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+    final Layer layer1 = new Layer(2, 16,
+            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
+
+    // z_output layer
+    final OutputLayer layer2 = new OutputLayer(16, 2,
+            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
+
+    neuralNetwork.addLayer(layer1, layer2);
 
     int nEpochs = 1;
-    int iterations = 1000;
+    int iterations = 1100;
     neuralNetwork.setLearningRate(1d);
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
