@@ -35,25 +35,22 @@ import java.util.List;
 public interface Network {
 
   void saveToFile(String nnSaveFile);
-
   void loadFromFile(String nnSaveFile);
-
-  List<ILayer> getLayerList();
 
   void addLayer(Layer layer);
   void addLayer(Layer... layer);
+  List<ILayer> getLayerList();
 
   void train(DataSetIterator dataSetIter, int epochs, int iterations);
-
   void train(DataSet dataSet, int epochs, int iterations);
   void train(INDArray features, INDArray labels, int epochs, int iterations);
 
   INDArray predict(INDArray features);
 
   double getLearningRate();
-
   void setLearningRate(double learningRate);
 
   void eval(DataSetIterator dataSetIterator);
   void eval(DataSet dataSet);
+
 }

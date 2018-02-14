@@ -40,7 +40,7 @@ public class OutputLayer extends Layer implements IOutputLayer {
 
   private INDArray labels;
   private double cost;
-  private INDArray gradientC;
+  private INDArray cDelta;
 
   public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
     super(inputSize, outputSize, weightInit, activationFunction, seed);
@@ -51,49 +51,47 @@ public class OutputLayer extends Layer implements IOutputLayer {
   }
 
   @Override
-  public INDArray forwardPass(final INDArray outputLastLayer) {
-    super.forwardPass(outputLastLayer);
+  public INDArray forwardPass(final INDArray activationPreviousLayer) {
+    super.forwardPass(activationPreviousLayer);
     // TODO: if SOFTMAX compute class props
     return getActivation();
   }
 
   @Override
-  public INDArray computeOutputError(final INDArray labels, final int nExamples, final boolean training) {
+  public INDArray backwardPass() {
+    super.backwardPass(cDelta);
+    return getPreviousLayerDelta();
+  }
+
+  @Override
+  public INDArray computeCostGradient(final INDArray labels, final int nExamples, final boolean training) {
+
     // TODO: this could be cached
     this.labels = labels;
 
     // TODO: implement different loss functions C
 
-    // quadratic cost function
-    // (1/2n) * ∑ ||y(x)-aL(x)||^2
-    final double unRegCost = Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
-    final double regularization =
-        0.5 * (regLamba / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
-    this.cost = unRegCost + regularization;
-
     // this is the gradient/derivative of the quadratic cost function!
-    // (aL−y)
-    // the derivative of cost also has a 1/n - this is done in the weights update to also cover the Bias
-    // TODO: add regularization to this
-     gradientC = getActivation().sub(labels);
+    // (aL−y)- the derivative of cost also has a 1/n - this is done in the weights update to also cover the Bias
+    // TODO: do we need to add regularization here?
+     cDelta = getActivation().sub(this.labels);
 
-     // what is this??? // Mean Square gradientC MSE??
-     //totalError = Transforms.abs(gradientC).meanNumber().doubleValue();
+     // what is this??? // Mean Square cDelta MSE??
+     //totalError = Transforms.abs(cDelta).meanNumber().doubleValue();
 
-    return gradientC;
+    return cDelta;
   }
 
   @Override
   public double computeCost(final INDArray labels, final int nExamples, final boolean training) {
     // TODO: this could be cached
-    computeOutputError(labels, nExamples, training);
+    // quadratic cost function
+    // (1/2n) * ∑ ||y(x)-aL(x)||^2
+    final double unRegCost = Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
+    final double regularization =
+            0.5 * (regLamba / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
+    this.cost = unRegCost + regularization;
     return cost;
-  }
-
-  @Override
-  public INDArray backwardPass() {
-    super.backwardPass(gradientC);
-    return getPreviousLayerError();
   }
 
   @Override

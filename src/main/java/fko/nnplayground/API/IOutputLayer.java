@@ -34,10 +34,10 @@ public interface IOutputLayer extends ILayer {
 
   /**
    * Extends the forwardPass from ILayer to also calculate error and totalError in this pass.
-   * So there is no need to use computeOutputError or computeCost after this. Just use get...()
+   * So there is no need to use computeCostGradient or computeCost after this. Just use get...()
    * @see fko.nnplayground.API.ILayer#forwardPass(INDArray)
    */
-  INDArray forwardPass(INDArray outputLastLayer);
+  INDArray forwardPass(INDArray activationPreviousLayer);
 
   /**
    *
@@ -45,7 +45,7 @@ public interface IOutputLayer extends ILayer {
    * @param training whether we compute this during training or outside of training
    * @return the array of errors for each example
    */
-  INDArray computeOutputError(INDArray labels, final int nExamples, boolean training);
+  INDArray computeCostGradient(INDArray labels, final int nExamples, boolean training);
 
   /**
    *

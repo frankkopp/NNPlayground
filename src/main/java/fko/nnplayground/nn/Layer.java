@@ -53,7 +53,7 @@ public class Layer implements ILayer {
 
   protected INDArray error; // gradient for layer
 
-  protected INDArray previousLayerError; // error on the previous layer
+  protected INDArray previousLayerDelta; // error on the previous layer
   protected double regLamba = 1e-3d; // default
 
   public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
@@ -77,28 +77,28 @@ public class Layer implements ILayer {
 
   /**
    * http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
-   * @param outputLastLayer the input for the layer
+   * @param activationPreviousLayer the input for the layer
    * @return activation of this layer
    * @see ILayer#forwardPass(INDArray)
    */
   @Override
-  public INDArray forwardPass(final INDArray outputLastLayer) {
+  public INDArray forwardPass(final INDArray activationPreviousLayer) {
     // z = Wx + b
-    z_output = weightsMatrix.mmul(outputLastLayer).addColumnVector(biasMatrix);
+    z_output = weightsMatrix.mmul(activationPreviousLayer).addColumnVector(biasMatrix);
     // a = nonLin(z)
     activation = Activation.applyActivation(activationFunction, z_output);
     return getActivation();
   }
 
   @Override
-  public INDArray backwardPass(INDArray gradient) {
+  public INDArray backwardPass(INDArray delta) {
     // σ′(zl)
     final INDArray derivative = Activation.applyDerivative(activationFunction, activation);
     // δl=((wl+1)T*δl+1) ⊙ σ′(zl)
-    error = gradient.mul(derivative);
+    error = delta.mul(derivative);
     // δl-l=((wl)T*δl)
-    previousLayerError = weightsMatrix.transpose().mmul(error);
-    return getPreviousLayerError();
+    previousLayerDelta = weightsMatrix.transpose().mmul(error);
+    return getPreviousLayerDelta();
   }
 
   @Override
@@ -109,12 +109,14 @@ public class Layer implements ILayer {
     // full change of weights based on gradient and layer_1 z_output
     // regularization - learningRate*delta
     // (1−ηλ/n)*w     − η * ∂C0/∂w
-    final INDArray W_delta = error.mmul(activationPreviousLayer.transpose());
+    final INDArray W_fullUpdate = error.mmul(activationPreviousLayer.transpose()).div(nExamples);
     // multiplied with learning rate to adjust step size
-    final INDArray W_change = W_delta.mul(learningRate/nExamples);
+    final INDArray W_ratedUpdate = W_fullUpdate.mul(learningRate);
     // update W2 (incl. regularization)
-    weightsMatrix.muli(1-((learningRate*regLamba)/nExamples)).subi(W_change);
-    biasMatrix.subi(error.sum(1).mul(learningRate/nExamples));
+    weightsMatrix.muli(1-((learningRate*regLamba)/nExamples)).subi(W_ratedUpdate);
+
+    final INDArray b_ratedUpdated = error.sum(1).mul(learningRate / nExamples);
+    biasMatrix.subi(b_ratedUpdated);
   }
 
   @Override
@@ -168,8 +170,8 @@ public class Layer implements ILayer {
   }
 
   @Override
-  public INDArray getPreviousLayerError() {
-    return previousLayerError.dup();
+  public INDArray getPreviousLayerDelta() {
+    return previousLayerDelta.dup();
   }
 
   @Override

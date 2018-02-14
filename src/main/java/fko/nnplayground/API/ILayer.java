@@ -36,10 +36,10 @@ public interface ILayer {
 
   /**
    * Computes the layer's forward pass
-   * @param outputLastLayer the input for the layer
+   * @param activationPreviousLayer the input for the layer
    * @return the activation of the layer (after activation function)
    */
-  INDArray forwardPass(INDArray outputLastLayer);
+  INDArray forwardPass(INDArray activationPreviousLayer);
 
   /**
    * @return the z_output of the layer before the nonLin activation function
@@ -47,10 +47,10 @@ public interface ILayer {
   INDArray getZ_output();
 
   /**
-   * @param error of this layer (back propagated from next layer)
-   * @return the error of the previous layer
+   * @param delta of this layer (back propagated from next layer)
+   * @return the delta of the previous layer
    */
-  INDArray backwardPass(INDArray error);
+  INDArray backwardPass(INDArray delta);
 
   /**
    * @param activationPreviousLayer
@@ -79,7 +79,7 @@ public interface ILayer {
 
   INDArray getError();
 
-  INDArray getPreviousLayerError();
+  INDArray getPreviousLayerDelta();
 
   /**
    * Regularization strength
