@@ -31,7 +31,7 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
 /**
- * This basic example shows how to manually create a DataSet and train it to an basic Network.
+ * This basic example shows how to manually create a DataSet and train it to an basic INeuralNetwork.
  *
  * <p>The network consists in 2 input-neurons, 1 hidden-layer with 4 hidden-neurons, and 2
  * z_output-neurons.

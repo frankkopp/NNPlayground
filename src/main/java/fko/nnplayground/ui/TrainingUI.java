@@ -26,7 +26,7 @@
 package fko.nnplayground.ui;
 
 import com.sun.javafx.application.PlatformImpl;
-import fko.nnplayground.API.Network;
+import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.TrainingListener;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -40,7 +40,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.deeplearning4j.eval.Evaluation;
-import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
@@ -156,39 +155,39 @@ public class TrainingUI extends Application implements TrainingListener {
   }
 
   @Override
-  public void iterationDone(final Network nn, final int iteration) {
+  public void iterationDone(final INeuralNetwork nn, final int iteration) {
     if (iteration % interval == 0) {
       Platform.runLater(() -> updateUI(iteration));
     }
   }
 
   @Override
-  public void onEpochStart(final Network nn) {
+  public void onEpochStart(final INeuralNetwork nn) {
 
   }
 
   @Override
-  public void onEpochEnd(final Network nn) {
+  public void onEpochEnd(final INeuralNetwork nn) {
 
   }
 
   @Override
-  public void onForwardPass(final Network nn, final List<INDArray> activations) {
+  public void onForwardPass(final INeuralNetwork nn, final List<INDArray> activations) {
 
   }
 
   @Override
-  public void onForwardPass(final Network nn, final Map<String, INDArray> activations) {
+  public void onForwardPass(final INeuralNetwork nn, final Map<String, INDArray> activations) {
 
   }
 
   @Override
-  public void onGradientCalculation(final Network nn) {
+  public void onGradientCalculation(final INeuralNetwork nn) {
 
   }
 
   @Override
-  public void onBackwardPass(final Network nn) {
+  public void onBackwardPass(final INeuralNetwork nn) {
 
   }
 

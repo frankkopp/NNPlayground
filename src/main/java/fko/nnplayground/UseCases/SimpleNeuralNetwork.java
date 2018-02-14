@@ -26,8 +26,8 @@
 package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.ILayer;
+import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.IOutputLayer;
-import fko.nnplayground.API.Network;
 import fko.nnplayground.nn.Activation;
 import fko.nnplayground.nn.Layer;
 import fko.nnplayground.nn.OutputLayer;
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /** SimpleNeuralNetwork */
-public class SimpleNeuralNetwork implements Network {
+public class SimpleNeuralNetwork implements INeuralNetwork {
 
   private static final Logger LOG = LoggerFactory.getLogger(SimpleNeuralNetwork.class);
 
@@ -253,8 +253,13 @@ public class SimpleNeuralNetwork implements Network {
   }
 
   @Override
-  public void loadFromFile(final String nnSaveFile) {
-    // not implemented
+  public void addLayer(final ILayer layer) {
+
+  }
+
+  @Override
+  public void addLayer(final ILayer... layer) {
+
   }
 
   @Override
@@ -264,12 +269,14 @@ public class SimpleNeuralNetwork implements Network {
   }
 
   @Override
-  public void addLayer(final Layer layer) {
-    // not implemented
+  public int getInputLength() {
+    return 0;
   }
 
   @Override
-  public void addLayer(final Layer... layer) {
-    // not implemented
+  public int getOutputLength() {
+    return 0;
   }
+
+
 }

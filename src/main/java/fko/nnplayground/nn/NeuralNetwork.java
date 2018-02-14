@@ -26,8 +26,9 @@
 package fko.nnplayground.nn;
 
 import fko.nnplayground.API.ILayer;
+import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.IOutputLayer;
-import fko.nnplayground.API.Network;
+import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
@@ -35,17 +36,20 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /** Multi layered NeuralNetwork */
-public class NeuralNetwork implements Network {
+public class NeuralNetwork implements INeuralNetwork {
 
   private static final Logger LOG = LoggerFactory.getLogger(NeuralNetwork.class);
+
+  private static final String NETWORK_CONFIG_FILENAME = "network_config.txt";
 
   // state to serialize
   private int inputLength;
@@ -66,23 +70,27 @@ public class NeuralNetwork implements Network {
   private int totalNegatives;
 
   /**
-   * TODO: improve evaluation
    * TODO: save and load train data
    * TODO: add SOFTMAX
    * TODO: add listener
+   * TODO: improve evaluation
    *  @param height
    * @param width
    * @param channels
-   * @param nLabels
+   * @param outputLength the number of classes e.g. labels
    */
   public NeuralNetwork(
-          final int height, final int width, final int channels, int nLabels) {
-    this(height * width * channels, nLabels);
+          final int height, final int width, final int channels, int outputLength) {
+    this(height * width * channels, outputLength);
   }
 
-  public NeuralNetwork(final int inputLength, final int nLabels) {
+  /**
+   * @param inputLength
+   * @param outputLength the number of classes e.g. labels
+   */
+  public NeuralNetwork(final int inputLength, final int outputLength) {
     this.inputLength = inputLength;
-    this.outputLength = nLabels;
+    this.outputLength = outputLength;
   }
 
   /**
@@ -110,7 +118,7 @@ public class NeuralNetwork implements Network {
         // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
         // also needs to be transposed so the numExp are columns and inputData is rows
         final INDArray features =
-            batch.getFeatures().reshape(batch.numExamples(), inputLength).transpose();
+                batch.getFeatures().reshape(batch.numExamples(), inputLength).transpose();
         final INDArray labels = batch.getLabels().transpose();
         optimize(features, labels);
       }
@@ -132,7 +140,7 @@ public class NeuralNetwork implements Network {
     // DataSet has shape "numEx,Channels,height,width" -> needs to become "numEx,inputlength"
     // also needs to be transposed so the numExp are columns and inputData is rows
     final INDArray features =
-        dataSet.getFeatures().reshape(dataSet.numExamples(), inputLength).transpose();
+            dataSet.getFeatures().reshape(dataSet.numExamples(), inputLength).transpose();
     final INDArray labels = dataSet.getLabels().transpose();
 
     // Epoch
@@ -200,16 +208,16 @@ public class NeuralNetwork implements Network {
       // forward pass through all layers
       INDArray activationLastLayer = features;
       for (ILayer layer : layerList) {
-          activationLastLayer = layer.forwardPass(activationLastLayer);
+        activationLastLayer = layer.forwardPass(activationLastLayer);
       }
 
       // z_output loss
       if (totalIterations++ % 100 == 0) {
         LOG.info(
-            "Loss at iteration {} (batch size {}) = {}",
-            totalIterations - 1,
+                "Loss at iteration {} (batch size {}) = {}",
+                totalIterations - 1,
                 nExamples,
-            outputLayer.computeCost(labels, nExamples, true));
+                outputLayer.computeCost(labels, nExamples, true));
       }
 
       // back propagation through all layers
@@ -336,33 +344,106 @@ public class NeuralNetwork implements Network {
   @Override
   public void saveToFile(final String nnSaveFile) {
     try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(nnSaveFile))) {
-      //      ZipOutputStream zipOutputStream = new ZipOutputStream(new
-      // CloseShieldOutputStream(stream));
-      //
-      //      // Save layers as binary
-      //      int c=0;
-      //      for (ILayer layer : layerList) {
-      //        ZipEntry zipLayer = new ZipEntry("layer_" + c++ + ".bin");
-      //        zipOutputStream.putNextEntry(zipLayer);
-      //        DataOutputStream dos = new DataOutputStream(new
-      // BufferedOutputStream(zipOutputStream));
-      //        try {
-      //          layer.write(dos);
-      //        } finally {
-      //          dos.flush();
-      //        }
-      //      }
-      //
-      //      zipOutputStream.close();
+
+      ZipOutputStream zipOutputStream = new ZipOutputStream(new CloseShieldOutputStream(stream));
+
+      // Save layers as binary
+      int c=0;
+      for (ILayer layer : layerList) {
+        ZipEntry zipLayer = new ZipEntry("layer_" + c++ + ".txt");
+        zipOutputStream.putNextEntry(zipLayer);
+        DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(zipOutputStream));
+        try {
+          dos.writeBytes(String.format("[Layer %d]%n", c - 1));
+          LayerReaderWriter layerReaderWriter = new LayerReaderWriter(layer);
+          layerReaderWriter.write(dos);
+        } finally {
+          dos.flush();
+        }
+      }
+
+      // save network config
+      ZipEntry zipLayer = new ZipEntry(NETWORK_CONFIG_FILENAME);
+      zipOutputStream.putNextEntry(zipLayer);
+      DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(zipOutputStream));
+      try {
+        dos.writeBytes(String.format("[INeuralNetwork Config]%n"));
+        // input length
+        dos.writeBytes(String.format("inputLength=%d%n",inputLength));
+        // output length
+        dos.writeBytes(String.format("outputLength=%d%n",outputLength));
+        // number of layers
+        dos.writeBytes(String.format("numberOfLayers=%d%n",layerList.size()));
+      } finally {
+        dos.flush();
+      }
+
+      zipOutputStream.close();
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  @Override
-  public void loadFromFile(final String nnSaveFile) {}
+  public static INeuralNetwork loadFromFile(final String nnSaveFile) {
 
-  @Override
+    NeuralNetwork neuralNetwork = null;
+
+    ZipFile zipFile;
+    try {
+      zipFile = new ZipFile(nnSaveFile);
+
+      int read_inputLength = 1;
+      int read_outputLength = 1;
+      int read_numberOfLayers = 0;
+
+      // network config
+      ZipEntry config = zipFile.getEntry(NETWORK_CONFIG_FILENAME);
+      if (config != null) {
+        InputStream stream = zipFile.getInputStream(config);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        String line = "";
+        while ((line = reader.readLine()) != null) {
+          if (line.matches(".*=.*")) {
+            String[] keyValuePair = line.split("=");
+            switch (keyValuePair[0]) {
+              case "inputLength":
+                read_inputLength = Integer.valueOf(keyValuePair[1]);
+                break;
+              case "outputLength":
+                read_outputLength = Integer.valueOf(keyValuePair[1]);
+                break;
+              case "numberOfLayers":
+                read_numberOfLayers = Integer.valueOf(keyValuePair[1]);
+                break;
+            }
+          }
+        }
+      }
+      neuralNetwork = new NeuralNetwork(read_inputLength, read_outputLength);
+
+      // layers
+
+      // create layers and add them to network
+      for (int i=0; i<read_numberOfLayers; i++) {
+        ZipEntry layerFile = zipFile.getEntry("layer_" + i + ".txt");
+
+        if (layerFile != null) {
+          InputStream stream = zipFile.getInputStream(layerFile);
+          ILayer newLayer = LayerReaderWriter.read(new DataInputStream(stream));
+          // add to network
+          if (newLayer != null) {
+            neuralNetwork.addLayer(newLayer);
+          }
+        }
+
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return neuralNetwork;
+  }
+
+    @Override
   public double getLearningRate() {
     return learningRate;
   }
@@ -378,33 +459,45 @@ public class NeuralNetwork implements Network {
   }
 
   @Override
-  public void addLayer(final Layer layer) {
+  public void addLayer(final ILayer layer) {
     layerList.add(layer);
   }
 
   @Override
-  public void addLayer(final Layer... layer) {
+  public void addLayer(final ILayer... layer) {
     layerList.addAll(Arrays.asList(layer));
   }
 
 
   @Override
+  public int getInputLength() {
+    return inputLength;
+  }
+
+  @Override
+  public int getOutputLength() {
+    return outputLength;
+  }
+
+  @Override
   public String toString() {
     return "NeuralNetwork{"
-        + "inputLength="
-        + inputLength
-        + ", outputLength="
-        + outputLength
-        + ", epochs="
-        + epochs
-        + ", iterations="
-        + iterations
-        + ", learningRate="
-        + learningRate
-        + ", totalIterations="
-        + totalIterations
-        + ", layerList="
-        + Arrays.toString(layerList.toArray())
-        + '}';
+            + "inputLength="
+            + inputLength
+            + ", outputLength="
+            + outputLength
+            + ", epochs="
+            + epochs
+            + ", iterations="
+            + iterations
+            + ", learningRate="
+            + learningRate
+            + ", totalIterations="
+            + totalIterations
+            + ", layerList="
+            + Arrays.toString(layerList.toArray())
+            + '}';
   }
+
+
 }

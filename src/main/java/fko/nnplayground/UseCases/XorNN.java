@@ -25,7 +25,7 @@
 
 package fko.nnplayground.UseCases;
 
-import fko.nnplayground.API.Network;
+import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.nn.*;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -89,7 +89,7 @@ public class XorNN {
 
     final int seed = 1234;
 
-    Network neuralNetwork = new NeuralNetwork(2, 2);
+    INeuralNetwork neuralNetwork = new NeuralNetwork(2, 2);
 
     // layer (hidden layer)
     final Layer layer1 = new Layer(2, 16,
@@ -107,10 +107,10 @@ public class XorNN {
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
 
-//    LOG.info("Writing model to file {}", NN_SAVE_FILE);
-//    neuralNetwork.saveToFile(NN_SAVE_FILE);
-//    neuralNetwork.loadFromFile(NN_SAVE_FILE);
+    LOG.info("Writing model to file {}", NN_SAVE_FILE);
+    neuralNetwork.saveToFile(NN_SAVE_FILE);
 
     neuralNetwork.eval(dataSet);
+
   }
 }

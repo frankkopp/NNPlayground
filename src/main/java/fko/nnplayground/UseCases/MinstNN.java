@@ -25,7 +25,7 @@
 
 package fko.nnplayground.UseCases;
 
-import fko.nnplayground.API.Network;
+import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.nn.*;
 import fko.nnplayground.util.DataUtilities;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
@@ -101,7 +101,7 @@ public class MinstNN {
     DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, outputNum);
     testIter.setPreProcessor(scaler); // same normalization for better results
 
-    Network neuralNetwork = new NeuralNetwork(height, width, channels, outputNum);
+    INeuralNetwork neuralNetwork = new NeuralNetwork(height, width, channels, outputNum);
 
     // layer (hidden layer)
     neuralNetwork.addLayer(
