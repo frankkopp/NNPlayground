@@ -30,6 +30,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+
 /**
  * Layer
  */
@@ -44,17 +46,17 @@ public class Layer implements ILayer {
   private Activation.Activations activationFunction;
 
   private final WeightInitializer.WeightInit weightInit;
+  private final LayerReaderWriter layerReaderWriter = new LayerReaderWriter(this);
 
   protected INDArray weightsMatrix;
   protected INDArray biasMatrix;
 
+  protected double regLamba = 1e-3d; // default
+
   protected INDArray z_output; // before the non linearity function
   protected INDArray activation; // after the non linearity
-
   protected INDArray error; // gradient for layer
-
   protected INDArray previousLayerDelta; // error on the previous layer
-  protected double regLamba = 1e-3d; // default
 
   public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
     this.inputSize = inputSize;
@@ -77,6 +79,7 @@ public class Layer implements ILayer {
 
   /**
    * http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
+   *
    * @param activationPreviousLayer the input for the layer
    * @return activation of this layer
    * @see ILayer#forwardPass(INDArray)
@@ -113,7 +116,7 @@ public class Layer implements ILayer {
     // multiplied with learning rate to adjust step size
     final INDArray W_ratedUpdate = W_fullUpdate.mul(learningRate);
     // update W2 (incl. regularization)
-    weightsMatrix.muli(1-((learningRate*regLamba)/nExamples)).subi(W_ratedUpdate);
+    weightsMatrix.muli(1 - ((learningRate * regLamba) / nExamples)).subi(W_ratedUpdate);
 
     final INDArray b_ratedUpdated = error.sum(1).mul(learningRate / nExamples);
     biasMatrix.subi(b_ratedUpdated);
@@ -162,6 +165,16 @@ public class Layer implements ILayer {
   @Override
   public INDArray getBiasMatrix() {
     return biasMatrix.dup();
+  }
+
+  @Override
+  public void setBiasMatrix(final INDArray newBiasMatrix) {
+    biasMatrix = newBiasMatrix;
+  }
+
+  @Override
+  public void setWeightsMatrix(final INDArray newWeightMatrix) {
+    weightsMatrix = newWeightMatrix;
   }
 
   @Override
