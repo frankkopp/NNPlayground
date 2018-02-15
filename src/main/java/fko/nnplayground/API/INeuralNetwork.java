@@ -25,19 +25,31 @@
 
 package fko.nnplayground.API;
 
-import fko.nnplayground.nn.Layer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 
 import java.util.List;
 
+/**
+ * TODO: Javadoc
+ */
 public interface INeuralNetwork {
 
   void saveToFile(String nnSaveFile);
 
   void addLayer(ILayer layer);
+
   void addLayer(ILayer... layer);
+
+  double getAccuracy();
+
+  int getExamplesSeenTraining();
+
+  int getExamplesSeenEval();
+
+  double getF1score();
+
   List<ILayer> getLayerList();
 
   int getInputLength();
@@ -45,15 +57,31 @@ public interface INeuralNetwork {
   int getOutputLength();
 
   void train(DataSetIterator dataSetIter, int epochs, int iterations);
+
   void train(DataSet dataSet, int epochs, int iterations);
+
   void train(INDArray features, INDArray labels, int epochs, int iterations);
 
   INDArray predict(INDArray features);
 
+  double getCurrentScore();
+
   double getLearningRate();
+
+  double getPrecision();
+
+  double getRecall();
+
   void setLearningRate(double learningRate);
 
   void eval(DataSetIterator dataSetIterator);
+
   void eval(DataSet dataSet);
+
+  void addListener(ITrainingListener listener);
+
+  void addListener(ITrainingListener... listener);
+
+  void removeListener(ITrainingListener listener);
 
 }

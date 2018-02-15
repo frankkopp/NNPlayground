@@ -57,13 +57,18 @@ class NeuralNetworkTest {
   @Test
   void saveToFile() {
 
+    INDArray matrixb1 = Nd4j.randn(1000, 1, 123);
+    INDArray matrixb2 = Nd4j.randn(2, 1, 321);
+
     // layer (hidden layer)
     final Layer layer1 = new Layer(2, 1000,
             WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, 1234);
+    layer1.setBiasMatrix(matrixb1);
 
     // z_output layer
     final OutputLayer layer2 = new OutputLayer(1000, 2,
             WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, 1234);
+    layer2.setBiasMatrix(matrixb2);
 
     INeuralNetwork neuralNetwork = new NeuralNetwork(2, 2);
     neuralNetwork.addLayer(layer1, layer2);
