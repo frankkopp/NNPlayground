@@ -26,63 +26,79 @@
 package fko.nnplayground.ui;
 
 import com.sun.javafx.application.PlatformImpl;
+import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
-import fko.nnplayground.API.TrainingListener;
+import fko.nnplayground.API.ITrainingListener;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Pos;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import org.deeplearning4j.eval.Evaluation;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-/** TrainingUI */
-public class TrainingUI extends Application implements TrainingListener {
+/**
+ * TrainingUI
+ */
+public class TrainingUI extends Application implements ITrainingListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(TrainingUI.class);
 
-  public static final int updateInterval = 1; // ms
+  private final INeuralNetwork neuralNetwork;
+  private final int interval;
+  private INDArray layerActivation;
+  private ILayer chossenLayer;
+
+  public int updateInterval = 1; // ms
 
   private Stage primaryStage;
-  private Text score;
+  private AnchorPane root;
+  private Scene scene;
+
   private XYChart.Series scoreSeries;
   private XYChart.Series f1Series;
+  private XYChart.Series accuracySeries;
 
-  private final MultiLayerNetwork multiLayerNetwork;
-  private Evaluation evaluation;
-  private final int interval;
+  private ObservableList layerList;
 
-  public TrainingUI(final MultiLayerNetwork network) {
+  public TrainingUI(final INeuralNetwork network) {
     this(network, 1);
   }
 
-  public TrainingUI(final MultiLayerNetwork network, int interval) {
+  public TrainingUI(final INeuralNetwork network, int interval) {
 
-    this.multiLayerNetwork = network;
+    this.neuralNetwork = network;
     this.interval = interval;
-    this.evaluation = null;
 
     LOG.info("Starting TrainingUI with interval {} iterations", interval);
 
-    // Startup the JavaFX platform
-    Platform.setImplicitExit(false);
+    // Start JavaFX platform
     PlatformImpl.startup(
-        () -> {
-          primaryStage = new Stage();
-          start(primaryStage);
-        });
+            () -> {
+              // Startup the JavaFX platform
+              primaryStage = new Stage();
+              start(primaryStage);
+            });
+
+    Platform.setImplicitExit(true);
 
     // wait for the UI to show before returning
     do {
@@ -93,110 +109,352 @@ public class TrainingUI extends Application implements TrainingListener {
     } while (primaryStage == null || !primaryStage.isShowing());
   }
 
-  private void updateUI(final int iteration) {
-
-    if (multiLayerNetwork == null) {
-      score.setText("N/A");
-    } else {
-      double score = multiLayerNetwork.score();
-      this.score.setText("" + score);
-      if (score > 0) {
-        scoreSeries.getData().add(new XYChart.Data(iteration, score));
-      }
-      if (evaluation != null) {
-        double f1 = evaluation.f1();
-        evaluation.stats();
-        if (f1 > 0) {
-          f1Series.getData().add(new XYChart.Data(iteration, f1));
-        }
-      }
-    }
-  }
-
   @Override
   public void start(final Stage stage) {
 
-    // raw score out put row
-    HBox scoreRow = new HBox();
-    scoreRow.setAlignment(Pos.CENTER);
-    Text label = new Text("Score: ");
-    score = new Text("n/a");
-    scoreRow.getChildren().addAll(label, score);
+    LOG.info("Starting JavaFX Application");
 
-    // graph
-    // defining the axes
-    final NumberAxis xAxis = new NumberAxis();
-    final NumberAxis yAxis = new NumberAxis();
-    xAxis.setLabel("Iterations");
-    yAxis.setLabel("Score");
-    // creating the chart
-    final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(xAxis, yAxis);
-    lineChart.setTitle("Training Score");
-    lineChart.setCreateSymbols(false); // hide dots
-    lineChart.setMinHeight(500);
-    // defining a scoreSeries
-    scoreSeries = new XYChart.Series();
-    scoreSeries.setName("Loss Score");
-    f1Series = new XYChart.Series();
-    f1Series.setName("F1 Score");
-    lineChart.getData().addAll(scoreSeries, f1Series);
+    // read FXML file and setup UI
+    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/TrainingUI.fxml"));
+    fxmlLoader.setController(this);
+    try {
+      root = fxmlLoader.load();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
-    // horizontal box with all rows
-    VBox root = new VBox();
-    root.setAlignment(Pos.CENTER);
-    root.getChildren().addAll(scoreRow);
-    root.getChildren().addAll(lineChart);
+    // FXML init
+    initialize();
 
-    Scene scene = new Scene(root, 800, 600);
-    stage.setScene(scene);
-    stage.setTitle("Training Info");
-    stage.setResizable(true);
-    stage.show();
+    // set initial window title - will be extended in controller
+    primaryStage.setTitle("Training Monitor by Frank Kopp");
+    // setup window
+    scene = new Scene(root);
+    primaryStage.setScene(scene);
+    primaryStage.centerOnScreen();
+    primaryStage.setResizable(true);
+
+    // extend the FXML view
+    addAdditionalViews();
+
+    // closeAction
+    primaryStage.setOnCloseRequest(event -> System.exit(0));
+
+    // finally show window
+    primaryStage.show();
+
+    LOG.info("JavaFX Application started");
+
   }
 
-  @Override
-  public void iterationDone(final INeuralNetwork nn, final int iteration) {
-    if (iteration % interval == 0) {
-      Platform.runLater(() -> updateUI(iteration));
+  private void addAdditionalViews() {
+    // learning Score Chart
+    learningScoreChart.setCreateSymbols(false); // hide dots
+    learningScoreChart.setVerticalGridLinesVisible(false);
+    learningScoreChart.setLegendVisible(false);
+    scoreSeries = new XYChart.Series();
+    learningScoreChart.getData().addAll(scoreSeries);
+
+    // f1 Score chart
+    f1ScoreChart.setCreateSymbols(false); // hide dots
+    f1ScoreChart.setVerticalGridLinesVisible(false);
+    f1ScoreChart.setLegendVisible(false);
+    f1Series = new XYChart.Series();
+    f1ScoreChart.getData().addAll(f1Series);
+
+    // accuracy Score chart
+    accuracyChart.setCreateSymbols(false); // hide dots
+    accuracyChart.setVerticalGridLinesVisible(false);
+    accuracyChart.setLegendVisible(false);
+    accuracySeries = new XYChart.Series();
+    accuracyChart.getData().addAll(accuracySeries);
+
+    // choose layer dropdown
+    layerList = FXCollections.observableArrayList();
+    chooseLayer.setItems(layerList);
+    chooseLayer.getSelectionModel().selectedIndexProperty()
+               .addListener((ov, value, new_value) -> chooseLayerUpdateView(new_value));
+
+  }
+
+  private void chooseLayerUpdateView(final Number new_value) {
+    final int layerIdx = new_value.intValue();
+    chossenLayer = neuralNetwork.getLayerList().get(layerIdx);
+
+    numberOfRows.setText("" + chossenLayer.getOutputSize());
+    numberOfColumns.setText("1");
+
+    updateActivationView();
+
+  }
+
+  private void updateActivationView() {
+    if (chossenLayer != null) {
+
+      layerActivation = chossenLayer.getActivation();
+
+      final int rectangleSize = 25;
+
+      activationPane.getChildren().clear();
+      final int examples = layerActivation.columns();
+      for (int j = 0; j < examples; j++) {
+        for (int i = 0; i < layerActivation.rows(); i++) {
+          final double aDouble = layerActivation.getDouble(i, j);
+          final int rgbValue = (int) (aDouble * 255);
+          final Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
+          Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
+          Tooltip tooltip = new Tooltip(""+aDouble);
+          Tooltip.install(rectangle, tooltip);
+          rectangle.setStroke(Color.WHITE);
+          rectangle.setStrokeWidth(2.0);
+          rectangle.setFill(color);
+          activationPane.getChildren().add(rectangle);
+        }
+        Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
+        rectangle.setStroke(Color.WHITE);
+        rectangle.setStrokeWidth(2.0);
+        rectangle.setFill(Color.RED);
+        activationPane.getChildren().add(rectangle);
+      }
     }
   }
 
   @Override
-  public void onEpochStart(final INeuralNetwork nn) {
+  public void onTrainStart() {
+    Platform.runLater(() -> {
+      updateViewsOnTrainStart();
+    });
+  }
+
+  private void updateViewsOnTrainStart() {
+    layerList.addAll(neuralNetwork.getLayerList());
+    inputsLabel.setText("" + neuralNetwork.getInputLength());
+    outputsLabel.setText("" + neuralNetwork.getOutputLength());
+    layersLabel.setText("" + neuralNetwork.getLayerList().size());
+  }
+
+  @Override
+  public void onTrainEnd() {
 
   }
 
   @Override
-  public void onEpochEnd(final INeuralNetwork nn) {
+  public void onEpochStart(final int epoch, final int batchSize) {
+    Platform.runLater(() -> {
+      currentEpochLabel.setText("" + epoch);
+      batchSizeLabel.setText("" + batchSize);
+    });
+  }
+
+  @Override
+  public void onEpochEnd() {
 
   }
 
   @Override
-  public void onForwardPass(final INeuralNetwork nn, final List<INDArray> activations) {
+  public void iterationDone(final int iteration) {
+    if (iteration % interval == 0) {
+      Platform.runLater(() -> updateViewAfterIteration(iteration));
+    }
+  }
+
+  private void updateViewAfterIteration(final int iteration) {
+    currentIterationLabel.setText("" + iteration);
+
+    // total examples seen
+    examplesLabel.setText("" + neuralNetwork.getExamplesSeenTraining());
+
+    // score label update
+    double score = neuralNetwork.getCurrentScore();
+    currentScoreLabel.setText("" + score);
+    // score chart upate
+    if (score > 0) {
+      scoreSeries.getData().add(
+              new XYChart.Data(Integer.toString(iteration), score));
+    }
+
+    // learning Rate - could be changed after each iteration
+    learningRateLabel.setText("" + neuralNetwork.getLearningRate());
+
+    // should be per layer - we simplify here and only use first layer
+    if (neuralNetwork.getLayerList().size() > 0) {
+      l2StrengthLabel.setText("" + neuralNetwork.getLayerList().get(0).getRegLamba());
+    }
+
+    // score chart update
+    f1Series.getData().add(
+            new XYChart.Data(Integer.toString(iteration), neuralNetwork.getF1score()));
+
+    // accuracy chart update
+    accuracySeries.getData().add(
+            new XYChart.Data(Integer.toString(iteration), neuralNetwork.getAccuracy()));
+
+    recallLabel.setText("" + neuralNetwork.getRecall());
+    precisionLabel.setText("" + neuralNetwork.getPrecision());
+    accuracyLabel.setText("" + neuralNetwork.getAccuracy());
+    f1scoreLabel.setText("" + neuralNetwork.getF1score());
+
+    updateActivationView();
+  }
+
+  @Override
+  public void onForwardPass(final List<INDArray> activations) {
 
   }
 
   @Override
-  public void onForwardPass(final INeuralNetwork nn, final Map<String, INDArray> activations) {
+  public void onForwardPass(final Map<String, INDArray> activations) {
 
   }
 
   @Override
-  public void onGradientCalculation(final INeuralNetwork nn) {
+  public void onGradientCalculation() {
 
   }
 
   @Override
-  public void onBackwardPass(final INeuralNetwork nn) {
+  public void onBackwardPass() {
 
   }
 
-  public Evaluation getEvaluation() {
-    return evaluation;
+  @Override
+  public void onEvalStart() {
+
   }
 
-  public void setEvaluation(final Evaluation evaluation) {
-    this.evaluation = evaluation;
+  @Override
+  public void onEvalEnd() {
+    Platform.runLater(() -> {
+      recallEvalLabel.setText("" + neuralNetwork.getRecall());
+      precisionEvalLabel.setText("" + neuralNetwork.getPrecision());
+      accuracyEvalLabel.setText("" + neuralNetwork.getAccuracy());
+      f1ScoreEvalLabel.setText("" + neuralNetwork.getF1score());
+      examplesEvalLabel.setText("" + neuralNetwork.getExamplesSeenEval());
+    });
+  }
+
+  @FXML // fx:id="currentScoreLabel"
+  private Label currentScoreLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="learningRateLabel"
+  private Label learningRateLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="l2StrengthLabel"
+  private Label l2StrengthLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="currentIterationLabel"
+  private Label currentIterationLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="currentEpochLabel"
+  private Label currentEpochLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="batchSizeLabel"
+  private Label batchSizeLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="inputsLabel"
+  private Label inputsLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="outputsLabel"
+  private Label outputsLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="layersLabel"
+  private Label layersLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="chooseLayer"
+  private ChoiceBox<?> chooseLayer; // Value injected by FXMLLoader
+
+  @FXML // fx:id="numberOfRows"
+  private TextField numberOfRows; // Value injected by FXMLLoader
+
+  @FXML // fx:id="numberOfColumns"
+  private TextField numberOfColumns; // Value injected by FXMLLoader
+
+  @FXML // fx:id="activationPane"
+  private FlowPane activationPane; // Value injected by FXMLLoader
+
+  @FXML // fx:id="learningScoreChart"
+  private LineChart<?, ?> learningScoreChart; // Value injected by FXMLLoader
+
+  @FXML // fx:id="accuracyChart"
+  private LineChart<?, ?> accuracyChart; // Value injected by FXMLLoader
+
+  @FXML // fx:id="f1ScoreChart"
+  private LineChart<?, ?> f1ScoreChart; // Value injected by FXMLLoader
+
+  @FXML // fx:id="recallLabel"
+  private Label recallLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="precisionLabel"
+  private Label precisionLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="accuracyLabel"
+  private Label accuracyLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="f1scoreLabel"
+  private Label f1scoreLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="examplesLabel"
+  private Label examplesLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="examplesEvalLabel"
+  private Label examplesEvalLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="recallEvalLabel"
+  private Label recallEvalLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="precisionEvalLabel"
+  private Label precisionEvalLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="accuracyEvalLabel"
+  private Label accuracyEvalLabel; // Value injected by FXMLLoader
+
+  @FXML // fx:id="accuracyEvalLabel"
+  private Label f1ScoreEvalLabel; // Value injected by FXMLLoader
+
+  @FXML
+    // This method is called by the FXMLLoader when initialization is complete
+  void initialize() {
+    assert currentScoreLabel != null :
+            "fx:id=\"currentScoreLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert learningRateLabel != null :
+            "fx:id=\"learningRateLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert l2StrengthLabel != null :
+            "fx:id=\"l2StrengthLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert currentIterationLabel != null :
+            "fx:id=\"currentIterationLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert currentEpochLabel != null :
+            "fx:id=\"currentEpochLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert batchSizeLabel != null :
+            "fx:id=\"batchSizeLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert inputsLabel != null : "fx:id=\"inputsLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert outputsLabel != null : "fx:id=\"outputsLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert layersLabel != null : "fx:id=\"layersLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert chooseLayer != null : "fx:id=\"chooseLayer\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert numberOfRows != null : "fx:id=\"numberOfRows\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert numberOfColumns != null :
+            "fx:id=\"numberOfColumns\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert activationPane != null :
+            "fx:id=\"activationPane\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert learningScoreChart != null :
+            "fx:id=\"learningScoreChart\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert accuracyChart != null : "fx:id=\"accuracyChart\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert f1ScoreChart != null : "fx:id=\"f1ScoreChart\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert recallLabel != null : "fx:id=\"recallLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert precisionLabel != null :
+            "fx:id=\"precisionLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert accuracyLabel != null : "fx:id=\"accuracyLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert f1scoreLabel != null : "fx:id=\"f1scoreLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert examplesLabel != null : "fx:id=\"examplesLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert examplesEvalLabel != null :
+            "fx:id=\"examplesEvalLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert recallEvalLabel != null :
+            "fx:id=\"recallEvalLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert precisionEvalLabel != null :
+            "fx:id=\"precisionEvalLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert accuracyEvalLabel != null :
+            "fx:id=\"accuracyEvalLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
+    assert f1ScoreEvalLabel != null :
+            "fx:id=\"f1ScoreEvalLabel\" was not injected: check your FXML file 'TrainingUI.fxml'.";
   }
 
 }
