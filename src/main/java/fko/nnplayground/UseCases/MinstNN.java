@@ -27,6 +27,7 @@ package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.nn.*;
+import fko.nnplayground.ui.TrainingUI;
 import fko.nnplayground.util.DataUtilities;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;
@@ -44,14 +45,21 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Random;
 
-/** MinstNN */
+/**
+ * MinstNN
+ */
 public class MinstNN {
 
   private static final Logger LOG = LoggerFactory.getLogger(MinstNN.class);
 
   private static final String basePath = "./var/data" + "/mnist";
   private static final String dataUrl =
-      "http://github.com/myleott/mnist_png/raw/master/mnist_png.tar.gz";
+          "http://github.com/myleott/mnist_png/raw/master/mnist_png.tar.gz";
+
+  // where to store the trained network
+  private static final String folderPathPlain = "./var/";
+  private static final String NN_SAVE_FILE =
+          folderPathPlain + MinstNN.class.getName() + "_" + System.currentTimeMillis() + ".zip";
 
   public static void main(String[] args) throws Exception {
 
@@ -62,7 +70,7 @@ public class MinstNN {
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 512;
+    int batchSize = 5;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -78,11 +86,11 @@ public class MinstNN {
     }
 
     // vectorization of train data
-    File trainData = new File(basePath + "/mnist_png/training"); // TODO changed for debugging
+    File trainData = new File(basePath + "/mnist_png/training");
     LOG.debug("Preparing training data...{}", trainData);
     FileSplit trainSplit = new FileSplit(trainData, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
     ParentPathLabelGenerator labelMaker =
-        new ParentPathLabelGenerator(); // parent path as the image label
+            new ParentPathLabelGenerator(); // parent path as the image label
     ImageRecordReader trainRR = new ImageRecordReader(height, width, channels, labelMaker);
     trainRR.initialize(trainSplit);
     DataSetIterator trainIter = new RecordReaderDataSetIterator(trainRR, batchSize, 1, outputNum);
@@ -103,24 +111,25 @@ public class MinstNN {
 
     INeuralNetwork neuralNetwork = new NeuralNetwork(height, width, channels, outputNum);
 
+    neuralNetwork.addListener(new TrainingUI(neuralNetwork, 100));
+
     // layer (hidden layer)
     neuralNetwork.addLayer(
-            new Layer(height*width*channels, 1000,
-                    WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+            new Layer(height * width * channels, 1000,
+                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
     // z_output layer
     neuralNetwork.addLayer(
             new OutputLayer(1000, outputNum,
-                    WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+                            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
 
-    int nEpochs = 10;
-    int iterations = 10;
+    int nEpochs = 2;
+    int iterations = 5;
     neuralNetwork.setLearningRate(0.01d);
 
     neuralNetwork.train(trainIter, nEpochs, iterations);
 
-//    LOG.info("Writing model to file {}", NN_SAVE_FILE);
-//    neuralNetwork.saveToFile(NN_SAVE_FILE);
-//    neuralNetwork.loadFromFile(NN_SAVE_FILE);
+    LOG.info("Writing model to file {}", NN_SAVE_FILE);
+    neuralNetwork.saveToFile(NN_SAVE_FILE);
 
     neuralNetwork.eval(testIter);
   }

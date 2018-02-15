@@ -27,6 +27,7 @@ package fko.nnplayground.UseCases;
 
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.nn.*;
+import fko.nnplayground.ui.TrainingUI;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -44,7 +45,7 @@ public class XorNN {
   // where to store the trained network
   private static final String folderPathPlain = "./var/";
   private static final String NN_SAVE_FILE =
-      folderPathPlain + XorNN.class.getName() + "_" + System.currentTimeMillis() + ".zip";
+          folderPathPlain + XorNN.class.getName() + "_" + System.currentTimeMillis() + ".zip";
 
   public static void main(String[] args) {
 
@@ -95,14 +96,20 @@ public class XorNN {
     final Layer layer1 = new Layer(2, 16,
             WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
 
+//    // layer (hidden layer)
+//    final Layer layer2 = new Layer(16, 16,
+//                                   WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
+
     // z_output layer
-    final OutputLayer layer2 = new OutputLayer(16, 2,
+    final OutputLayer layer3 = new OutputLayer(16, 2,
             WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
 
-    neuralNetwork.addLayer(layer1, layer2);
+    neuralNetwork.addLayer(layer1, layer3);
 
-    int nEpochs = 1;
-    int iterations = 1100;
+    neuralNetwork.addListener(new TrainingUI(neuralNetwork, 10));
+
+    int nEpochs = 5;
+    int iterations = 500;
     neuralNetwork.setLearningRate(1d);
 
     neuralNetwork.train(dataSet, nEpochs, iterations);
