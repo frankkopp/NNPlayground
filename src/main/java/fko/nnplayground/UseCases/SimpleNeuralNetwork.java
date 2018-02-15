@@ -28,6 +28,7 @@ package fko.nnplayground.UseCases;
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.IOutputLayer;
+import fko.nnplayground.API.ITrainingListener;
 import fko.nnplayground.nn.Activation;
 import fko.nnplayground.nn.Layer;
 import fko.nnplayground.nn.OutputLayer;
@@ -234,13 +235,43 @@ public class SimpleNeuralNetwork implements INeuralNetwork {
   }
 
   @Override
+  public void addListener(final ITrainingListener listener) {
+
+  }
+
+  @Override
+  public void addListener(final ITrainingListener... listener) {
+
+  }
+
+  @Override
+  public void removeListener(final ITrainingListener listener) {
+
+  }
+
+  @Override
   public INDArray predict(final INDArray features) {
     // not implemented
     return null;
   }
 
+  @Override
+  public double getCurrentScore() {
+    return 0;
+  }
+
   public double getLearningRate() {
     return learningRate;
+  }
+
+  @Override
+  public double getPrecision() {
+    return 0;
+  }
+
+  @Override
+  public double getRecall() {
+    return 0;
   }
 
   public void setLearningRate(final double learningRate) {
@@ -260,6 +291,26 @@ public class SimpleNeuralNetwork implements INeuralNetwork {
   @Override
   public void addLayer(final ILayer... layer) {
 
+  }
+
+  @Override
+  public double getAccuracy() {
+    return 0;
+  }
+
+  @Override
+  public int getExamplesSeenTraining() {
+    return 0;
+  }
+
+  @Override
+  public int getExamplesSeenEval() {
+    return 0;
+  }
+
+  @Override
+  public double getF1score() {
+    return 0;
   }
 
   @Override

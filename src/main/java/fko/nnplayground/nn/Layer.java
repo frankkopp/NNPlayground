@@ -30,10 +30,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-
 /**
  * Layer
+ * TODO: Javadoc
  */
 public class Layer implements ILayer {
 
@@ -46,7 +45,6 @@ public class Layer implements ILayer {
   private Activation.Activations activationFunction;
 
   private final WeightInitializer.WeightInit weightInit;
-  private final LayerReaderWriter layerReaderWriter = new LayerReaderWriter(this);
 
   protected INDArray weightsMatrix;
   protected INDArray biasMatrix;
@@ -58,21 +56,27 @@ public class Layer implements ILayer {
   protected INDArray error; // gradient for layer
   protected INDArray previousLayerDelta; // error on the previous layer
 
-  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
+  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
+               final Activation.Activations activationFunction, final int seed) {
     this.inputSize = inputSize;
     this.outputSize = outputSize;
     this.weightInit = weightInit;
     this.activationFunction = activationFunction;
     this.seed = seed;
 
-    weightsMatrix = WeightInitializer.initWeights(this.weightInit, this.outputSize, this.inputSize, this.seed);
-    biasMatrix = WeightInitializer.initWeights(WeightInitializer.WeightInit.ZERO, this.outputSize, 1, this.seed);
+    weightsMatrix = WeightInitializer
+            .initWeights(this.weightInit, this.outputSize, this.inputSize, this.seed);
+    biasMatrix = WeightInitializer
+            .initWeights(WeightInitializer.WeightInit.ZERO, this.outputSize, 1, this.seed);
 
-    LOG.info("Created layer of type {}. InputSize: {} OutputSize: {} WeightInit: {} Activation: {} L2RegularizationStrength: {} ",
+    LOG.info(
+            "Created layer of type {}. InputSize: {} OutputSize: {} " +
+            "WeightInit: {} Activation: {} L2RegularizationStrength: {} ",
             getClass().getSimpleName(), inputSize, outputSize, weightInit, activationFunction, regLamba);
   }
 
-  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final double regStrength, final int seed) {
+  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
+               final Activation.Activations activationFunction, final double regStrength, final int seed) {
     this(inputSize, outputSize, weightInit, activationFunction, seed);
     this.regLamba = regStrength;
   }
@@ -82,6 +86,7 @@ public class Layer implements ILayer {
    *
    * @param activationPreviousLayer the input for the layer
    * @return activation of this layer
+   *
    * @see ILayer#forwardPass(INDArray)
    */
   @Override
@@ -205,11 +210,11 @@ public class Layer implements ILayer {
   @Override
   public String toString() {
     return "Layer{" +
-            "inputSize=" + inputSize +
-            ", outputSize=" + outputSize +
-            ", seed=" + seed +
-            ", activationFunction=" + activationFunction +
-            ", weightInit=" + weightInit +
-            '}';
+           "inputSize=" + inputSize +
+           ", outputSize=" + outputSize +
+           ", seed=" + seed +
+           ", activationFunction=" + activationFunction +
+           ", weightInit=" + weightInit +
+           '}';
   }
 }

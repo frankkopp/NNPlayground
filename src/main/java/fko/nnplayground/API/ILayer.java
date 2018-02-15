@@ -29,17 +29,14 @@ import fko.nnplayground.nn.Activation;
 import fko.nnplayground.nn.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 /**
- * TODO docs
+ * TODO Javadoc
  */
 public interface ILayer {
 
   /**
    * Computes the layer's forward pass
+   *
    * @param activationPreviousLayer the input for the layer
    * @return the activation of the layer (after activation function)
    */
@@ -68,14 +65,19 @@ public interface ILayer {
    */
 
   WeightInitializer.WeightInit getWeightInit();
+
   INDArray getActivation();
 
   INDArray getWeightsMatrix();
+
   INDArray getBiasMatrix();
+
   void setBiasMatrix(INDArray read_biasMatrix);
+
   void setWeightsMatrix(INDArray read_weightMatrix);
 
   void setActivationFunction(Activation.Activations function);
+
   Activation.Activations getActivationFunction();
 
   int getSeed();
@@ -83,12 +85,14 @@ public interface ILayer {
   int getInputSize();
 
   int getOutputSize();
+
   INDArray getError();
 
   INDArray getPreviousLayerDelta();
 
   /**
    * Regularization strength
+   *
    * @param regLamba set regularization strength. Default 0.001. Set to 0 to turn off regularization.
    */
   void setRegLamba(double regLamba);

@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * OutputLayer
+ * TODO: Javadoc
  */
 public class OutputLayer extends Layer implements IOutputLayer {
 
@@ -42,11 +43,13 @@ public class OutputLayer extends Layer implements IOutputLayer {
   private double cost;
   private INDArray cDelta;
 
-  public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, final int seed) {
+  public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
+                     final Activation.Activations activationFunction, final int seed) {
     super(inputSize, outputSize, weightInit, activationFunction, seed);
   }
 
-  public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit, final Activation.Activations activationFunction, double regStrength, final int seed) {
+  public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
+                     final Activation.Activations activationFunction, double regStrength, final int seed) {
     super(inputSize, outputSize, weightInit, activationFunction, regStrength, seed);
   }
 
@@ -65,19 +68,15 @@ public class OutputLayer extends Layer implements IOutputLayer {
 
   @Override
   public INDArray computeCostGradient(final INDArray labels, final int nExamples, final boolean training) {
-
     // TODO: this could be cached
-    this.labels = labels;
-
     // TODO: implement different loss functions C
+
+    this.labels = labels;
 
     // this is the gradient/derivative of the quadratic cost function!
     // (aL−y)- the derivative of cost also has a 1/n - this is done in the weights update to also cover the Bias
     // TODO: do we need to add regularization here?
-     cDelta = getActivation().sub(this.labels);
-
-     // what is this??? // Mean Square cDelta MSE??
-     //totalError = Transforms.abs(cDelta).meanNumber().doubleValue();
+    cDelta = getActivation().sub(this.labels);
 
     return cDelta;
   }
@@ -85,9 +84,12 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public double computeCost(final INDArray labels, final int nExamples, final boolean training) {
     // TODO: this could be cached
+    // TODO: add more cost functions
+
     // quadratic cost function
     // (1/2n) * ∑ ||y(x)-aL(x)||^2
-    final double unRegCost = Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
+    final double unRegCost =
+            Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
     final double regularization =
             0.5 * (regLamba / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
     this.cost = unRegCost + regularization;
@@ -102,6 +104,6 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public String toString() {
     return "OutputLayer{" +
-            super.toString() + " }";
+           super.toString() + " }";
   }
 }
