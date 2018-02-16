@@ -30,15 +30,20 @@ import fko.nnplayground.nn.WeightInitializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 /**
+ * ILayer interface
  * TODO Javadoc
  */
 public interface ILayer {
 
   /**
-   * Computes the layer's forward pass
+   * The forward pass uses the layer input data to calculate the activation (output) of the layer.
+   * It computes the raw weights*input (Wx+b) value called z_output and the activation (usually called a)
+   * which is computed using a non linear function like ReLU, Sigmoid, etc.
+   * <p>
+   * http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
    *
    * @param activationPreviousLayer the input for the layer
-   * @return the activation of the layer (after activation function)
+   * @return activation of this layer
    */
   INDArray forwardPass(INDArray activationPreviousLayer);
 
@@ -48,14 +53,20 @@ public interface ILayer {
   INDArray getZ_output();
 
   /**
+   * The backward pass propagates the layer's error back using the gradient to the previous layer.
+   * It calculates the error for this layer which can be queried by <code>getError()</code>.
+   *
    * @param delta of this layer (back propagated from next layer)
    * @return the delta of the previous layer
    */
   INDArray backwardPass(INDArray delta);
 
   /**
-   * @param activationPreviousLayer
-   * @param nExamples
+   * After the backward pass through all layers is complete this method is called
+   * on all layers to update the weights of this layer.
+   *
+   * @param activationPreviousLayer the input from the previous layer
+   * @param nExamples the number of examples used in the backpropagation run (usually batch size)
    * @param learningRate the factor for update steps on the weights
    */
   void updateWeights(final INDArray activationPreviousLayer, final int nExamples, double learningRate);
@@ -93,9 +104,9 @@ public interface ILayer {
   /**
    * Regularization strength
    *
-   * @param regLamba set regularization strength. Default 0.001. Set to 0 to turn off regularization.
+   * @param l2Strength set regularization strength. Default 0.001. Set to 0 to turn off regularization.
    */
-  void setRegLamba(double regLamba);
+  void setL2Strength(double l2Strength);
 
-  double getRegLamba();
+  double getL2Strength();
 }

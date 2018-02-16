@@ -290,7 +290,7 @@ public class NeuralNetwork implements INeuralNetwork {
       }
 
       // z_output loss
-      currentScore = outputLayer.computeCost(labels, nExamples, true);
+      currentScore = outputLayer.computeCost(labels, nExamples);
       if (totalIterations++ % 100 == 0) {
         LOG.info(
                 "Loss at iteration {} (batch size {}) = {}",
@@ -305,7 +305,7 @@ public class NeuralNetwork implements INeuralNetwork {
       // BP2: δl= ((wl+1)T * δl+1) ⊙ σ′(zl) 8An equation for the error δl in terms of the error in the next layer, δl+1]
       // BP3: ∂C / ∂blj = δlj [An equation for the rate of change of the cost with respect to any bias in the network]
       // BP4: ∂C / ∂wljk = al−1k ⊙ δlj [An equation for the rate of change of the cost with respect to any weight in the network]
-      final INDArray costGradient = outputLayer.computeCostGradient(labels, nExamples, true);
+      final INDArray costGradient = outputLayer.computeCostGradient(labels, nExamples);
       INDArray errorPreviousLayer = outputLayer.backwardPass(costGradient);
       for (int i = layerList.size() - 2; i >= 0; i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);

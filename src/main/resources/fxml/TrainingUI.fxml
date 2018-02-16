@@ -7,7 +7,6 @@
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -43,7 +42,7 @@
   ~
   -->
 
-<AnchorPane prefHeight="900.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane prefHeight="900.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox alignment="CENTER" layoutX="50.0" layoutY="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -85,92 +84,93 @@
                   <Insets bottom="15.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </GridPane>
-            <SplitPane dividerPositions="0.38534278959810875" orientation="VERTICAL" VBox.vgrow="ALWAYS">
-              <items>
-                  <AnchorPane>
+            <ScrollPane fitToWidth="true" pannable="true" VBox.vgrow="ALWAYS">
+               <content>
+                  <VBox alignment="CENTER">
                      <children>
-                        <TitledPane text="Activations" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                           <content>
-                              <VBox>
-                                 <children>
-                                    <HBox alignment="CENTER" fillHeight="false" prefWidth="900.0" VBox.vgrow="NEVER">
+                        <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
+                           <children>
+                              <TitledPane text="Learning Score">
+                                 <content>
+                                    <LineChart fx:id="learningScoreChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis label="Score" side="LEFT" upperBound="5.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                            <TitledPane expanded="false" text="Accuracy">
+                                 <content>
+                                    <LineChart fx:id="accuracyChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis autoRanging="false" label="Accuracy" minorTickCount="10" side="LEFT" tickUnit="0.1" upperBound="1.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                            <TitledPane expanded="false" text="F1 Score" VBox.vgrow="NEVER">
+                                 <content>
+                                    <LineChart fx:id="f1ScoreChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis autoRanging="false" label="F1 SCore" minorTickCount="10" minorTickLength="1.0" side="LEFT" tickUnit="0.1" upperBound="1.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                           </children>
+                        </VBox>
+                        <AnchorPane VBox.vgrow="ALWAYS">
+                           <children>
+                              <TitledPane text="Activations" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <content>
+                                    <VBox>
                                        <children>
-                                          <Label text="Layer">
-                                             <HBox.margin>
-                                                <Insets left="15.0" right="15.0" />
-                                             </HBox.margin>
-                                          </Label>
-                                          <ChoiceBox fx:id="chooseLayer" prefWidth="200.0" />
-                                          <Label text="Rows">
-                                             <HBox.margin>
-                                                <Insets left="15.0" right="15.0" />
-                                             </HBox.margin>
-                                          </Label>
-                                          <TextField fx:id="numberOfRows" />
-                                          <Label text="Columns">
-                                             <HBox.margin>
-                                                <Insets left="15.0" right="15.0" />
-                                             </HBox.margin>
-                                          </Label>
-                                          <TextField fx:id="numberOfColumns" />
+                                          <HBox alignment="CENTER" fillHeight="false" prefWidth="900.0" VBox.vgrow="NEVER">
+                                             <children>
+                                                <Label text="Layer">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <ChoiceBox fx:id="chooseLayer" prefWidth="200.0" />
+                                                <Label text="Rows">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <TextField fx:id="numberOfRows" />
+                                                <Label text="Columns">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <TextField fx:id="numberOfColumns" />
+                                             </children>
+                                          </HBox>
+                                          <FlowPane fx:id="activationPane" alignment="CENTER" columnHalignment="CENTER" prefWrapLength="1000.0">
+                                             <VBox.margin>
+                                                <Insets top="25.0" />
+                                             </VBox.margin>
+                                          </FlowPane>
                                        </children>
-                                    </HBox>
-                                    <ScrollPane pannable="true" VBox.vgrow="ALWAYS">
-                                       <VBox.margin>
-                                          <Insets />
-                                       </VBox.margin>
-                                       <content>
-                                          <FlowPane fx:id="activationPane" alignment="CENTER_LEFT" prefWrapLength="870.0" />
-                                       </content>
-                                    </ScrollPane>
-                                 </children>
-                              </VBox>
-                           </content>
-                        </TitledPane>
-                     </children>
-                  </AnchorPane>
-                  <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-                     <children>
-                        <TitledPane text="Learning Score" VBox.vgrow="ALWAYS">
-                           <content>
-                              <LineChart fx:id="learningScoreChart" verticalGridLinesVisible="false">
-                                <xAxis>
-                                  <CategoryAxis label="Iterations" side="BOTTOM" />
-                                </xAxis>
-                                <yAxis>
-                                  <NumberAxis label="Score" side="LEFT" upperBound="5.0" />
-                                </yAxis>
-                              </LineChart>
-                           </content>
-                        </TitledPane>
-                      <TitledPane text="Accuracy" VBox.vgrow="NEVER">
-                           <content>
-                              <LineChart fx:id="accuracyChart" verticalGridLinesVisible="false">
-                                <xAxis>
-                                  <CategoryAxis label="Iterations" side="BOTTOM" />
-                                </xAxis>
-                                <yAxis>
-                                  <NumberAxis label="Accuracy" side="LEFT" upperBound="1.0" />
-                                </yAxis>
-                              </LineChart>
-                           </content>
-                        </TitledPane>
-                      <TitledPane text="F1 Score" VBox.vgrow="NEVER">
-                           <content>
-                              <LineChart fx:id="f1ScoreChart" verticalGridLinesVisible="false">
-                                <xAxis>
-                                  <CategoryAxis label="Iterations" side="BOTTOM" />
-                                </xAxis>
-                                <yAxis>
-                                  <NumberAxis label="F1 SCore" side="LEFT" upperBound="1.0" />
-                                </yAxis>
-                              </LineChart>
-                           </content>
-                        </TitledPane>
+                                    </VBox>
+                                 </content>
+                              </TitledPane>
+                           </children>
+                        </AnchorPane>
                      </children>
                   </VBox>
-              </items>
-            </SplitPane>
+               </content>
+            </ScrollPane>
             <GridPane hgap="5.0" minHeight="80.0" VBox.vgrow="NEVER">
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />

@@ -53,6 +53,9 @@ public class OutputLayer extends Layer implements IOutputLayer {
     super(inputSize, outputSize, weightInit, activationFunction, regStrength, seed);
   }
 
+  /**
+   * @see fko.nnplayground.API.ILayer#forwardPass(INDArray)
+   */
   @Override
   public INDArray forwardPass(final INDArray activationPreviousLayer) {
     super.forwardPass(activationPreviousLayer);
@@ -61,13 +64,16 @@ public class OutputLayer extends Layer implements IOutputLayer {
   }
 
   @Override
+  /**
+   * @see fko.nnplayground.API.ILayer#backwardPass(INDArray)
+   */
   public INDArray backwardPass() {
     super.backwardPass(cDelta);
     return getPreviousLayerDelta();
   }
 
   @Override
-  public INDArray computeCostGradient(final INDArray labels, final int nExamples, final boolean training) {
+  public INDArray computeCostGradient(final INDArray labels, final int nExamples) {
     // TODO: this could be cached
     // TODO: implement different loss functions C
 
@@ -82,7 +88,7 @@ public class OutputLayer extends Layer implements IOutputLayer {
   }
 
   @Override
-  public double computeCost(final INDArray labels, final int nExamples, final boolean training) {
+  public double computeCost(final INDArray labels, final int nExamples) {
     // TODO: this could be cached
     // TODO: add more cost functions
 
@@ -91,7 +97,7 @@ public class OutputLayer extends Layer implements IOutputLayer {
     final double unRegCost =
             Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
     final double regularization =
-            0.5 * (regLamba / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
+            0.5 * (l2Strength / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
     this.cost = unRegCost + regularization;
     return cost;
   }

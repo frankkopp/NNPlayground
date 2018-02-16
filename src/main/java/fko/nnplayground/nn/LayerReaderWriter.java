@@ -53,7 +53,7 @@ public class LayerReaderWriter {
     // seed
     dos.writeBytes(String.format("seed=%d%n", layer.getSeed()));
     // regLambda
-    dos.writeBytes(String.format("regLambda=%s%n", Double.toString(layer.getRegLamba())));
+    dos.writeBytes(String.format("regLambda=%s%n", Double.toString(layer.getL2Strength())));
     // activation
     dos.writeBytes(String.format("ActivationFunction=%s%n", layer.getActivationFunction().name()));
     // weight init

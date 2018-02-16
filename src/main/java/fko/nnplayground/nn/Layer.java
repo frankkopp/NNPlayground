@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Layer
- * TODO: Javadoc
+ * TODO Javadoc
  */
 public class Layer implements ILayer {
 
@@ -43,27 +43,38 @@ public class Layer implements ILayer {
   private final int seed;
 
   private Activation.Activations activationFunction;
-
   private final WeightInitializer.WeightInit weightInit;
+  protected double l2Strength = 1e-3d; // default
 
   protected INDArray weightsMatrix;
   protected INDArray biasMatrix;
-
-  protected double regLamba = 1e-3d; // default
 
   protected INDArray z_output; // before the non linearity function
   protected INDArray activation; // after the non linearity
   protected INDArray error; // gradient for layer
   protected INDArray previousLayerDelta; // error on the previous layer
 
+  /**
+   * Creates a new Layer and initializes the weights and bias matrix.
+   *
+   * @param inputSize Size of input. Usually number of data points for the first layer or the output of the
+   *         previous layer.
+   * @param outputSize Size of output. Usually the input for the next layer or the number of labels in case of
+   *         the last output layer.
+   * @param weightInit Which weight initialization strategy should be used.
+   * @param activationFunction Which activation function should be used.
+   * @param seed Random seed to make runs comparable
+   */
   public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
                final Activation.Activations activationFunction, final int seed) {
+
     this.inputSize = inputSize;
     this.outputSize = outputSize;
     this.weightInit = weightInit;
     this.activationFunction = activationFunction;
     this.seed = seed;
 
+    // weight initialization
     weightsMatrix = WeightInitializer
             .initWeights(this.weightInit, this.outputSize, this.inputSize, this.seed);
     biasMatrix = WeightInitializer
@@ -72,23 +83,27 @@ public class Layer implements ILayer {
     LOG.info(
             "Created layer of type {}. InputSize: {} OutputSize: {} " +
             "WeightInit: {} Activation: {} L2RegularizationStrength: {} ",
-            getClass().getSimpleName(), inputSize, outputSize, weightInit, activationFunction, regLamba);
-  }
-
-  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
-               final Activation.Activations activationFunction, final double regStrength, final int seed) {
-    this(inputSize, outputSize, weightInit, activationFunction, seed);
-    this.regLamba = regStrength;
+            getClass().getSimpleName(), inputSize, outputSize, weightInit, activationFunction, l2Strength);
   }
 
   /**
-   * http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
+   * Creates a new Layer and initializes the weights and bias matrix.
    *
-   * @param activationPreviousLayer the input for the layer
-   * @return activation of this layer
-   *
-   * @see ILayer#forwardPass(INDArray)
+   * @param inputSize Size of input. Usually number of data points for the first layer or the output of the
+   *         previous layer.
+   * @param outputSize Size of output. Usually the input for the next layer or the number of labels in case of
+   *         the last output layer.
+   * @param weightInit Which weight initialization strategy should be used.
+   * @param activationFunction Which activation function should be used.
+   * @param regStrength strength of the L2 regularization (usually called lambda)
+   * @param seed Random seed to make runs comparable
    */
+  public Layer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
+               final Activation.Activations activationFunction, final double regStrength, final int seed) {
+    this(inputSize, outputSize, weightInit, activationFunction, seed);
+    this.l2Strength = regStrength;
+  }
+
   @Override
   public INDArray forwardPass(final INDArray activationPreviousLayer) {
     // z = Wx + b
@@ -121,7 +136,7 @@ public class Layer implements ILayer {
     // multiplied with learning rate to adjust step size
     final INDArray W_ratedUpdate = W_fullUpdate.mul(learningRate);
     // update W2 (incl. regularization)
-    weightsMatrix.muli(1 - ((learningRate * regLamba) / nExamples)).subi(W_ratedUpdate);
+    weightsMatrix.muli(1 - ((learningRate * l2Strength) / nExamples)).subi(W_ratedUpdate);
 
     final INDArray b_ratedUpdated = error.sum(1).mul(learningRate / nExamples);
     biasMatrix.subi(b_ratedUpdated);
@@ -154,12 +169,12 @@ public class Layer implements ILayer {
 
   @Override
   public INDArray getZ_output() {
-    return z_output.dup();
+    return z_output == null ? null : z_output.dup();
   }
 
   @Override
   public INDArray getActivation() {
-    return activation.dup();
+    return activation == null ? null : activation.dup();
   }
 
   @Override
@@ -193,13 +208,13 @@ public class Layer implements ILayer {
   }
 
   @Override
-  public void setRegLamba(final double regLamba) {
-    this.regLamba = regLamba;
+  public void setL2Strength(final double l2Strength) {
+    this.l2Strength = l2Strength;
   }
 
   @Override
-  public double getRegLamba() {
-    return regLamba;
+  public double getL2Strength() {
+    return l2Strength;
   }
 
   @Override

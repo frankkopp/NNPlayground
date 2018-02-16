@@ -57,6 +57,9 @@ import java.util.Map;
 
 /**
  * TrainingUI
+ *
+ * Implements the ITrainingListener interface it can observe an INeuralNetwork.
+ * Starts up JavaFX when instantiating the class.
  */
 public class TrainingUI extends Application implements ITrainingListener {
 
@@ -64,25 +67,22 @@ public class TrainingUI extends Application implements ITrainingListener {
 
   private final INeuralNetwork neuralNetwork;
   private final int interval;
-  private INDArray layerActivation;
-  private ILayer chossenLayer;
-
-  public int updateInterval = 1; // ms
+  private ILayer chosenLayer;
 
   private Stage primaryStage;
   private AnchorPane root;
-  private Scene scene;
 
   private XYChart.Series scoreSeries;
   private XYChart.Series f1Series;
   private XYChart.Series accuracySeries;
 
-  private ObservableList layerList;
+  private ObservableList<ILayer> layerList;
 
-  public TrainingUI(final INeuralNetwork network) {
-    this(network, 1);
-  }
-
+  /**
+   * Creates the TrainingUI and starts up the JavaFX platform and shows windows.
+   * @param network the network to observe
+   * @param interval any n-th (n=interval) call will update the UI
+   */
   public TrainingUI(final INeuralNetwork network, int interval) {
 
     this.neuralNetwork = network;
@@ -97,7 +97,6 @@ public class TrainingUI extends Application implements ITrainingListener {
               primaryStage = new Stage();
               start(primaryStage);
             });
-
     Platform.setImplicitExit(true);
 
     // wait for the UI to show before returning
@@ -129,7 +128,7 @@ public class TrainingUI extends Application implements ITrainingListener {
     // set initial window title - will be extended in controller
     primaryStage.setTitle("Training Monitor by Frank Kopp");
     // setup window
-    scene = new Scene(root);
+    final Scene scene = new Scene(root);
     primaryStage.setScene(scene);
     primaryStage.centerOnScreen();
     primaryStage.setResizable(true);
@@ -177,57 +176,65 @@ public class TrainingUI extends Application implements ITrainingListener {
 
   }
 
+  /**
+   * is called when a new layer is chosen in the dropdown
+   * @param new_value
+   */
   private void chooseLayerUpdateView(final Number new_value) {
     final int layerIdx = new_value.intValue();
-    chossenLayer = neuralNetwork.getLayerList().get(layerIdx);
+    chosenLayer = neuralNetwork.getLayerList().get(layerIdx);
 
-    numberOfRows.setText("" + chossenLayer.getOutputSize());
+    numberOfRows.setText("" + chosenLayer.getOutputSize());
     numberOfColumns.setText("1");
 
     updateActivationView();
 
   }
 
+  /**
+   * Is chosen whenever the activation view shall be updated. Usually called after
+   * the n-th (n=interval) iteration.
+   */
   private void updateActivationView() {
-    if (chossenLayer != null) {
+    if (chosenLayer != null && chosenLayer.getActivation() != null) {
 
-      layerActivation = chossenLayer.getActivation();
+      final int rectangleSize = 15;
 
-      final int rectangleSize = 25;
+      final INDArray layerActivation = chosenLayer.getActivation().getColumn(0);
 
       activationPane.getChildren().clear();
       final int examples = layerActivation.columns();
       for (int j = 0; j < examples; j++) {
         for (int i = 0; i < layerActivation.rows(); i++) {
-          final double aDouble = layerActivation.getDouble(i, j);
-          final int rgbValue = (int) (aDouble * 255);
-          final Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
+          final double neuronActivation = layerActivation.getDouble(i, j);
+          final int rgbValue = (int) (neuronActivation * 255);
+          Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
+          // potential dead neurons
+          if (neuronActivation < 0.1) {
+            color = Color.LIGHTBLUE;
+          } else if (neuronActivation > 0.9) {
+            color = Color.ORANGERED;
+          }
           Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
-          Tooltip tooltip = new Tooltip(""+aDouble);
+          Tooltip tooltip = new Tooltip("" + neuronActivation);
           Tooltip.install(rectangle, tooltip);
           rectangle.setStroke(Color.WHITE);
           rectangle.setStrokeWidth(2.0);
           rectangle.setFill(color);
           activationPane.getChildren().add(rectangle);
         }
-        Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
-        rectangle.setStroke(Color.WHITE);
-        rectangle.setStrokeWidth(2.0);
-        rectangle.setFill(Color.RED);
-        activationPane.getChildren().add(rectangle);
       }
     }
   }
 
   @Override
   public void onTrainStart() {
-    Platform.runLater(() -> {
-      updateViewsOnTrainStart();
-    });
+    Platform.runLater(this::updateViewsOnTrainStart);
   }
 
   private void updateViewsOnTrainStart() {
     layerList.addAll(neuralNetwork.getLayerList());
+    chooseLayer.getSelectionModel().selectLast();
     inputsLabel.setText("" + neuralNetwork.getInputLength());
     outputsLabel.setText("" + neuralNetwork.getOutputLength());
     layersLabel.setText("" + neuralNetwork.getLayerList().size());
@@ -259,6 +266,7 @@ public class TrainingUI extends Application implements ITrainingListener {
   }
 
   private void updateViewAfterIteration(final int iteration) {
+
     currentIterationLabel.setText("" + iteration);
 
     // total examples seen
@@ -269,8 +277,7 @@ public class TrainingUI extends Application implements ITrainingListener {
     currentScoreLabel.setText("" + score);
     // score chart upate
     if (score > 0) {
-      scoreSeries.getData().add(
-              new XYChart.Data(Integer.toString(iteration), score));
+      scoreSeries.getData().add(new XYChart.Data<>(Integer.toString(iteration), score));
     }
 
     // learning Rate - could be changed after each iteration
@@ -278,16 +285,14 @@ public class TrainingUI extends Application implements ITrainingListener {
 
     // should be per layer - we simplify here and only use first layer
     if (neuralNetwork.getLayerList().size() > 0) {
-      l2StrengthLabel.setText("" + neuralNetwork.getLayerList().get(0).getRegLamba());
+      l2StrengthLabel.setText("" + neuralNetwork.getLayerList().get(0).getL2Strength());
     }
 
     // score chart update
-    f1Series.getData().add(
-            new XYChart.Data(Integer.toString(iteration), neuralNetwork.getF1score()));
+    f1Series.getData().add(new XYChart.Data<>(Integer.toString(iteration), neuralNetwork.getF1score()));
 
     // accuracy chart update
-    accuracySeries.getData().add(
-            new XYChart.Data(Integer.toString(iteration), neuralNetwork.getAccuracy()));
+    accuracySeries.getData().add(new XYChart.Data<>(Integer.toString(iteration), neuralNetwork.getAccuracy()));
 
     recallLabel.setText("" + neuralNetwork.getRecall());
     precisionLabel.setText("" + neuralNetwork.getPrecision());
@@ -361,7 +366,7 @@ public class TrainingUI extends Application implements ITrainingListener {
   private Label layersLabel; // Value injected by FXMLLoader
 
   @FXML // fx:id="chooseLayer"
-  private ChoiceBox<?> chooseLayer; // Value injected by FXMLLoader
+  private ChoiceBox<ILayer> chooseLayer; // Value injected by FXMLLoader
 
   @FXML // fx:id="numberOfRows"
   private TextField numberOfRows; // Value injected by FXMLLoader

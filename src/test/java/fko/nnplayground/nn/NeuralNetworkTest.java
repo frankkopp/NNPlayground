@@ -29,7 +29,6 @@ import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.UseCases.XorNN;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.math3.util.FastMath;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -91,7 +90,7 @@ class NeuralNetworkTest {
     assertEquals(read_layer1.getInputSize(), layer1.getInputSize());
     assertEquals(read_layer1.getOutputSize(), layer1.getOutputSize());
     assertEquals(read_layer1.getSeed(), layer1.getSeed());
-    assertEquals(read_layer1.getRegLamba(), layer1.getRegLamba());
+    assertEquals(read_layer1.getL2Strength(), layer1.getL2Strength());
     assertEquals(read_layer1.getActivationFunction(), layer1.getActivationFunction());
     assertEquals(read_layer1.getWeightInit(), layer1.getWeightInit());
     assertTrue(read_layer1.getWeightsMatrix().equalsWithEps(layer1.getWeightsMatrix(), 1e-6d));
@@ -102,7 +101,7 @@ class NeuralNetworkTest {
     assertEquals(read_layer2.getInputSize(), layer2.getInputSize());
     assertEquals(read_layer2.getOutputSize(), layer2.getOutputSize());
     assertEquals(read_layer2.getSeed(), layer2.getSeed());
-    assertEquals(read_layer2.getRegLamba(), layer2.getRegLamba());
+    assertEquals(read_layer2.getL2Strength(), layer2.getL2Strength());
     assertEquals(read_layer2.getActivationFunction(), layer2.getActivationFunction());
     assertEquals(read_layer2.getWeightInit(), layer2.getWeightInit());
     assertTrue(read_layer2.getWeightsMatrix().equalsWithEps(layer2.getWeightsMatrix(), 1e-6d));

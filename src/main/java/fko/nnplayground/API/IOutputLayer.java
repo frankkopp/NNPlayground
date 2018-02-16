@@ -28,40 +28,32 @@ package fko.nnplayground.API;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 /**
+ * IOutputLayer interface
  * TODO Javadoc
  */
 public interface IOutputLayer extends ILayer {
 
   /**
-   * Extends the forwardPass from ILayer to also calculate error and totalError in this pass.
-   * So there is no need to use computeCostGradient or computeCost after this. Just use get...()
+   * The backward pass propagates the layer's error back using the gradient to the previous layer.
+   * It calculates the error for this layer which can be queried by <code>getError()</code>.
+   * As this is an OutputLayer we calculated the input ourselves and we so not need a parameter.
    *
-   * @see fko.nnplayground.API.ILayer#forwardPass(INDArray)
-   */
-  INDArray forwardPass(INDArray activationPreviousLayer);
-
-  /**
-   * @param nExamples
-   * @param training whether we compute this during training or outside of training
-   * @return the array of errors for each example
-   */
-  INDArray computeCostGradient(INDArray labels, final int nExamples, boolean training);
-
-  /**
-   * @param columns
-   * @param training whether we compute this during training or outside of training
-   * @return the array of errors for all examples (total loss)
-   */
-  double computeCost(INDArray labels, final int columns, boolean training);
-
-  /**
-   * Uses the internal error calculated based on the labels
-   *
-   * @return
-   *
+   * @return the delta of the previous layer
    * @see ILayer#backwardPass(INDArray)
    */
   INDArray backwardPass();
+
+  /**
+   * @param nExamples The number of examples used in this back propagation run (batch)
+   * @return the array of gradients for each example
+   */
+  INDArray computeCostGradient(INDArray labels, final int nExamples);
+
+  /**
+   * @param nExamples The number of examples used in this back propagation run (batch)
+   * @return the array of loss for all examples (total loss)
+   */
+  double computeCost(INDArray labels, final int nExamples);
 
   INDArray getLabels();
 

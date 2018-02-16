@@ -211,7 +211,7 @@ public class SimpleNeuralNetwork implements INeuralNetwork {
             "Loss at iteration {} (batch size {}) = {}",
             totalIterations - 1,
             features.columns(),
-            outputLayer.computeCost(labels, features.columns(), true));
+            outputLayer.computeCost(labels, features.columns()));
       }
 
       // back propagation
