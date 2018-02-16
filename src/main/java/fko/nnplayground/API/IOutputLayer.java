@@ -23,38 +23,38 @@
  *
  */
 
-package fko.nnplayground.util;
+package fko.nnplayground.API;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 /**
- * CIFAR10
+ * IOutputLayer interface
+ * TODO Javadoc
  */
-public class CIFAR10 {
+public interface IOutputLayer extends ILayer {
 
-  private static final Logger LOG = LoggerFactory.getLogger(CIFAR10.class);
+  /**
+   * The backward pass propagates the layer's error back using the gradient to the previous layer.
+   * It calculates the error for this layer which can be queried by <code>getError()</code>.
+   * As this is an OutputLayer we calculated the input ourselves and we so not need a parameter.
+   *
+   * @return the delta of the previous layer
+   * @see ILayer#backwardPass(INDArray)
+   */
+  INDArray backwardPass();
 
-  private static final String basePath = "./var/data" + "/cifar10";
-  //private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz";
-  private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz";
+  /**
+   * @param nExamples The number of examples used in this back propagation run (batch)
+   * @return the array of gradients for each example
+   */
+  INDArray computeCostGradient(INDArray labels, final int nExamples);
 
-  public static void main(String[] args) throws Exception {
+  /**
+   * @param nExamples The number of examples used in this back propagation run (batch)
+   * @return the array of loss for all examples (total loss)
+   */
+  double computeCost(INDArray labels, final int nExamples);
 
-    LOG.info("Data load and vectorization using path {}", basePath);
-    String localFilePath = basePath + "/cifar-10-binary.tar.gz";
-
-    if (DataUtilities.downloadFile(dataUrl, localFilePath)) {
-      LOG.info("Data downloaded from {}", dataUrl);
-    }
-
-    if (!new File(basePath + "/cifar-10-binary").exists()) {
-      DataUtilities.extractTarGz(localFilePath, basePath);
-    }
-
-    LOG.info("Data extracted. Finished", basePath);
-  }
+  INDArray getLabels();
 
 }

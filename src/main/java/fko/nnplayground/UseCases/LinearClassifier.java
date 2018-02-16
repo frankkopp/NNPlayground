@@ -1,7 +1,31 @@
-package fko.nnplayground;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2018 Frank Kopp
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
+package fko.nnplayground.UseCases;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
@@ -30,7 +54,7 @@ public class LinearClassifier {
   // configuration
   private double learningRate = 0.001d;
   private boolean useRegularization = true;
-  private double regularizationLambda = 0.1;
+  private double regularizationLambda = 0.1d;
   private LossFunction lossFunction = LossFunction.SVM;
 
   public LinearClassifier(
@@ -156,8 +180,7 @@ public class LinearClassifier {
   }
 
   /**
-   * Multiclass SVM loss / hinge loss) TODO: Could this be done without the loop - it is possible in
-   * numpy TODO: numpy: np.maximum(0, scores - scores[y] +1)
+   * Multiclass SVM loss / hinge loss)
    *
    * @param x_i the current sample feature vector
    * @param scoreVector the score calculated for a given sample
@@ -169,6 +192,8 @@ public class LinearClassifier {
     double loss_i = 0;
 
     // hinge lossSVM (sum of difference to correct label +1)
+    // TODO: Could this be done without the loop - it is possible in numpy
+    // TODO: numpy: np.maximum(0, scores - scores[y] +1)
     for (int j = 0; j < scoreVector.rows(); j++) {
       if (j == correctLabelIndex) continue; // correct class
 

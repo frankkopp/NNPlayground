@@ -23,38 +23,43 @@
  *
  */
 
-package fko.nnplayground.util;
+package fko.nnplayground.MinstNN;
 
+import fko.nnplayground.UseCases.SimpleNeuralNetwork;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+class SimpleNeuralNetworkTest {
 
-/**
- * CIFAR10
- */
-public class CIFAR10 {
+  private static final Logger LOG = LoggerFactory.getLogger(SimpleNeuralNetworkTest.class);
 
-  private static final Logger LOG = LoggerFactory.getLogger(CIFAR10.class);
+  @BeforeEach
+  void setUp() {}
 
-  private static final String basePath = "./var/data" + "/cifar10";
-  //private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz";
-  private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz";
+  @Test
+  void constructor() {
+    SimpleNeuralNetwork snn = new SimpleNeuralNetwork(28, 28, 1, 10, 100, 1234);
+  }
 
-  public static void main(String[] args) throws Exception {
+  @Test
+  void sigmoidTest() {
+    INDArray array = Nd4j.ones(1, 1);
+    array.put(0, 0, 1);
+    INDArray sigmoidArray = Transforms.sigmoid(array);
+    System.out.println("Array\n" + array);
+    System.out.println("Sigmoid(array)\n" + sigmoidArray);
+    INDArray derivedSigmoidArray = Transforms.sigmoidDerivative(sigmoidArray);
+    System.out.println("Sigmoid'(array) lib\n" + derivedSigmoidArray);
+    INDArray myDerivative = sigmoidArray.mul(-1).add(1).mul(sigmoidArray);
+    System.out.println("Sigmoid'(array) manual \n" + myDerivative);
 
-    LOG.info("Data load and vectorization using path {}", basePath);
-    String localFilePath = basePath + "/cifar-10-binary.tar.gz";
-
-    if (DataUtilities.downloadFile(dataUrl, localFilePath)) {
-      LOG.info("Data downloaded from {}", dataUrl);
-    }
-
-    if (!new File(basePath + "/cifar-10-binary").exists()) {
-      DataUtilities.extractTarGz(localFilePath, basePath);
-    }
-
-    LOG.info("Data extracted. Finished", basePath);
+    // ==> bug in Nd4j sigmoidDerivative
   }
 
 }
+

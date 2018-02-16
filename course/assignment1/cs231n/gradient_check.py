@@ -73,7 +73,7 @@ def eval_numerical_gradient_blobs(f, inputs, output, h=1e-5):
   - f: function
   - inputs: tuple of input blobs
   - output: output blob
-  - h: step size
+  - h: step outputSize
   """
   numeric_diffs = []
   for input_blob in inputs:

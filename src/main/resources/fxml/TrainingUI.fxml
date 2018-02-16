@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2018 Frank Kopp
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all
+  ~ copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  ~
+  -->
+
+<AnchorPane prefHeight="900.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox alignment="CENTER" layoutX="50.0" layoutY="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <GridPane hgap="5.0" minHeight="60.0" VBox.vgrow="NEVER">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="180.0" minWidth="10.0" prefWidth="86.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="219.0" minWidth="10.0" prefWidth="207.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="152.0" minWidth="10.0" prefWidth="115.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="174.0" minWidth="10.0" prefWidth="174.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="113.0" minWidth="10.0" prefWidth="91.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="145.0" minWidth="10.0" prefWidth="145.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label text="Current Score" />
+                  <Label text="Current Iteration" GridPane.columnIndex="2" />
+                  <Label text="Current Epoch" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <Label text="Batch Size" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                  <Label text="Learning Rate" GridPane.rowIndex="1" />
+                  <Label text="L2 Strength" GridPane.rowIndex="2" />
+                  <Label text="Inputs" GridPane.columnIndex="4" />
+                  <Label text="Outputs" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                  <Label text="Layers" GridPane.columnIndex="4" GridPane.rowIndex="2" />
+                  <Label fx:id="currentScoreLabel" text="Label" GridPane.columnIndex="1" />
+                  <Label fx:id="learningRateLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label fx:id="l2StrengthLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Label fx:id="currentIterationLabel" text="Label" GridPane.columnIndex="3" />
+                  <Label fx:id="currentEpochLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                  <Label fx:id="batchSizeLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                  <Label fx:id="inputsLabel" text="Label" GridPane.columnIndex="5" />
+                  <Label fx:id="outputsLabel" text="Label" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                  <Label fx:id="layersLabel" text="Label" GridPane.columnIndex="5" GridPane.rowIndex="2" />
+               </children>
+               <VBox.margin>
+                  <Insets bottom="15.0" left="10.0" right="10.0" top="10.0" />
+               </VBox.margin>
+            </GridPane>
+            <ScrollPane fitToWidth="true" pannable="true" VBox.vgrow="ALWAYS">
+               <content>
+                  <VBox alignment="CENTER">
+                     <children>
+                        <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
+                           <children>
+                              <TitledPane text="Learning Score">
+                                 <content>
+                                    <LineChart fx:id="learningScoreChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis label="Score" side="LEFT" upperBound="5.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                            <TitledPane expanded="false" text="Accuracy">
+                                 <content>
+                                    <LineChart fx:id="accuracyChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis autoRanging="false" label="Accuracy" minorTickCount="10" side="LEFT" tickUnit="0.1" upperBound="1.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                            <TitledPane expanded="false" text="F1 Score" VBox.vgrow="NEVER">
+                                 <content>
+                                    <LineChart fx:id="f1ScoreChart" verticalGridLinesVisible="false">
+                                      <xAxis>
+                                        <CategoryAxis label="Iterations" side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis autoRanging="false" label="F1 SCore" minorTickCount="10" minorTickLength="1.0" side="LEFT" tickUnit="0.1" upperBound="1.0" />
+                                      </yAxis>
+                                    </LineChart>
+                                 </content>
+                              </TitledPane>
+                           </children>
+                        </VBox>
+                        <AnchorPane VBox.vgrow="ALWAYS">
+                           <children>
+                              <TitledPane text="Activations" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <content>
+                                    <VBox>
+                                       <children>
+                                          <HBox alignment="CENTER" fillHeight="false" prefWidth="900.0" VBox.vgrow="NEVER">
+                                             <children>
+                                                <Label text="Layer">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <ChoiceBox fx:id="chooseLayer" prefWidth="200.0" />
+                                                <Label text="Rows">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <TextField fx:id="numberOfRows" />
+                                                <Label text="Columns">
+                                                   <HBox.margin>
+                                                      <Insets left="15.0" right="15.0" />
+                                                   </HBox.margin>
+                                                </Label>
+                                                <TextField fx:id="numberOfColumns" />
+                                             </children>
+                                          </HBox>
+                                          <FlowPane fx:id="activationPane" alignment="CENTER" columnHalignment="CENTER" prefWrapLength="1000.0">
+                                             <VBox.margin>
+                                                <Insets top="25.0" />
+                                             </VBox.margin>
+                                          </FlowPane>
+                                       </children>
+                                    </VBox>
+                                 </content>
+                              </TitledPane>
+                           </children>
+                        </AnchorPane>
+                     </children>
+                  </VBox>
+               </content>
+            </ScrollPane>
+            <GridPane hgap="5.0" minHeight="80.0" VBox.vgrow="NEVER">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label text="Recall (Train)" />
+                  <Label text="Precision (Train)" GridPane.rowIndex="1" />
+                  <Label text="Accuracy (Train)" GridPane.rowIndex="2" />
+                  <Label text="Total Examples (Train)" GridPane.columnIndex="4" />
+                  <Label text="Total Examples (Eval)" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                  <Label text="-" GridPane.columnIndex="4" GridPane.rowIndex="2" />
+                  <Label text="F1 Score (Train)" GridPane.rowIndex="3" />
+                  <Label fx:id="recallLabel" text="Label" GridPane.columnIndex="1" />
+                  <Label fx:id="precisionLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label fx:id="accuracyLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Label fx:id="f1scoreLabel" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                  <Label text="-" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+                  <Label fx:id="examplesLabel" text="Label" GridPane.columnIndex="5" />
+                  <Label fx:id="examplesEvalLabel" text="Label" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+                  <Label text="-" GridPane.columnIndex="5" GridPane.rowIndex="2" />
+                  <Label text="-" GridPane.columnIndex="5" GridPane.rowIndex="3" />
+                  <Label text="Recal (Eval)" GridPane.columnIndex="2" />
+                  <Label text="Precision (Eval)" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <Label text="Accuracy (Eval)" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                  <Label text="F1 Score (Eval)" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                  <Label fx:id="recallEvalLabel" text="Label" GridPane.columnIndex="3" />
+                  <Label fx:id="precisionEvalLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                  <Label fx:id="accuracyEvalLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                  <Label fx:id="f1ScoreEvalLabel" text="Label" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="15.0" />
+               </VBox.margin>
+            </GridPane>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

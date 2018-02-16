@@ -23,38 +23,36 @@
  *
  */
 
-package fko.nnplayground.util;
+package fko.nnplayground.API;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
-/**
- * CIFAR10
- */
-public class CIFAR10 {
+import java.util.List;
+import java.util.Map;
 
-  private static final Logger LOG = LoggerFactory.getLogger(CIFAR10.class);
+public interface ITrainingListener {
 
-  private static final String basePath = "./var/data" + "/cifar10";
-  //private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz";
-  private static final String dataUrl =  "http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz";
+  void iterationDone(final int iteration);
 
-  public static void main(String[] args) throws Exception {
+  void onTrainStart();
 
-    LOG.info("Data load and vectorization using path {}", basePath);
-    String localFilePath = basePath + "/cifar-10-binary.tar.gz";
+  void onTrainEnd();
 
-    if (DataUtilities.downloadFile(dataUrl, localFilePath)) {
-      LOG.info("Data downloaded from {}", dataUrl);
-    }
+  void onEpochStart(final int epoch, final int batchSize);
 
-    if (!new File(basePath + "/cifar-10-binary").exists()) {
-      DataUtilities.extractTarGz(localFilePath, basePath);
-    }
+  void onEpochEnd();
 
-    LOG.info("Data extracted. Finished", basePath);
-  }
+  void onForwardPass(final List<INDArray> activations);
+
+  void onForwardPass(final Map<String, INDArray> activations);
+
+  void onGradientCalculation();
+
+  void onBackwardPass();
+
+  void onEvalStart();
+
+  void onEvalEnd();
 
 }
