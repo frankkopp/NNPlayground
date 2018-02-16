@@ -115,7 +115,12 @@ public class MinstNN {
 
     // layer (hidden layer)
     neuralNetwork.addLayer(
-            new Layer(height * width * channels, 500,
+            new Layer(height * width * channels, 1000,
+                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+
+    // layer (hidden layer)
+    neuralNetwork.addLayer(
+            new Layer(1000, 500,
                       WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
 
     // layer (hidden layer)
@@ -123,14 +128,19 @@ public class MinstNN {
             new Layer(500, 500,
                       WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
 
-    // z_output layer
+    // layer (hidden layer)
     neuralNetwork.addLayer(
-            new OutputLayer(500, outputNum,
+            new Layer(500, 250,
+                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+
+    // output layer
+    neuralNetwork.addLayer(
+            new OutputLayer(250, outputNum,
                             WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
 
-    int nEpochs = 10;
-    int iterations = 5;
-    neuralNetwork.setLearningRate(0.01d);
+    int nEpochs = 20;
+    int iterations = 10;
+    neuralNetwork.setLearningRate(1d);
 
     neuralNetwork.train(trainIter, nEpochs, iterations);
 
