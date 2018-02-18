@@ -26,11 +26,6 @@
 package fko.nnplayground.API;
 
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-
-import java.util.List;
-import java.util.Map;
-
 public interface ITrainingListener {
 
   void iterationDone(final int iteration);
@@ -43,16 +38,16 @@ public interface ITrainingListener {
 
   void onEpochEnd();
 
-  void onForwardPass(final List<INDArray> activations);
-
-  void onForwardPass(final Map<String, INDArray> activations);
-
-  void onGradientCalculation();
-
-  void onBackwardPass();
-
   void onEvalStart();
 
   void onEvalEnd();
+
+//  void onForwardPass(final List<INDArray> activations);
+//
+//  void onForwardPass(final Map<String, INDArray> activations);
+//
+//  void onGradientCalculation();
+//
+//  void onBackwardPass();
 
 }

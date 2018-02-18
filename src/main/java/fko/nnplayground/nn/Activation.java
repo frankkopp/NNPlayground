@@ -26,6 +26,7 @@
 package fko.nnplayground.nn;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.ops.transforms.Transforms;
@@ -75,20 +76,16 @@ public class Activation {
         // compute class probabilities
         // shift the values of f for each example so that the highest number is 0:
         // otherwise e^sk might become a NaN (too high)
-        final INDArray s = in.subRowVector(in.max(0));
+        final INDArray shiftedIn = in.subRowVector(in.max(0));
         // s = f(x,W) ==> P = e^sk / sum_j(e^sj);
         // get un-normalized probabilities
-        final INDArray es = exp(s);
+        final INDArray exps = exp(shiftedIn);
         // normalize them for each(!) example - each col sums to one
-        out = es.divRowVector(es.sum(0));
-
-        // softmax is a row operation so we need to transpose our
-        // matrix before and the result after
-        // z_output = Transforms.softmax(z_output.transpose()).transpose();
-        // hiddenOutput = Transforms.softmax(hiddenOutput);
+        out = exps.divRowVector(exps.sum(0));
         break;
       default:
-        out = Transforms.identity(in);
+        // TODO Exception
+        return null;
     }
     LOG.trace("Activation of \n{} is \n{}", in.ravel(), out.ravel() );
     return out;
@@ -118,17 +115,20 @@ public class Activation {
       case LEAKYRELU:
         dIn = Transforms.leakyReluDerivative(in, 0);
         break;
-//      case SOFTMAX: // only useful in z_output layer
-      // get the correct label matrix and transpose it - this creates a matrix
-      // identical in shape to scores with 1 where the correct score should have been
-      // pk−1(yi=k)
-      // the nonLinDerivative is identity pk except for all scores at the correct label there it is pk-1
-      //dIn = in.sub(labels.transpose()).div(features.columns());
-//        break;
-      default:
-        // f(x) = x ==> f'(x) = 1
-        dIn = in.assign(1);
+      case SOFTMAX: // only useful in z_output layer
+        // get the correct label matrix and transpose it - this creates a matrix
+        // identical in shape to scores with 1 where the correct score should have been
+        // pk−1(yi=k)
+        // the softmax derivative is identity pk except for all scores at the correct label there it is pk-1
+        //dIn = in.sub(labels.transpose()).div(features.columns());
+        //      errorSignal = tValues[k] - outputs[k];
+        //      derivative = (1 - outputs[k]) * outputs[k];
+        //      oSignals[k] = errorSignal * derivative;
+        dIn = Nd4j.onesLike(in).sub(in).mul(in);
         break;
+      default:
+        // TODO Exception
+        return null;
     }
     LOG.trace("Derivative of \n{} is \n{}", in.ravel(), dIn.ravel() );
     return dIn;

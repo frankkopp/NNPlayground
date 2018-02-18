@@ -337,6 +337,10 @@ public class NeuralNetwork implements INeuralNetwork {
       dataSetIterator.reset();
     }
 
+    for (ITrainingListener listener : listenerList) {
+      listener.onEvalStart();
+    }
+
     // Batch
     while (dataSetIterator.hasNext()) {
       DataSet batch = dataSetIterator.next();
@@ -358,6 +362,10 @@ public class NeuralNetwork implements INeuralNetwork {
     falseNegatives = 0;
     totalPositives = 0;
     totalNegatives = 0;
+
+    for (ITrainingListener listener : listenerList) {
+      listener.onEvalStart();
+    }
 
     evalBatch(dataSet);
 
@@ -435,8 +443,7 @@ public class NeuralNetwork implements INeuralNetwork {
     System.out.printf("Precision: %.4f%n", precision);
     System.out
             .printf("Accuracy : %.4f%n", accuracy);
-    System.out.printf("F1Score  : %.4f%n",
-                      f1score);
+    System.out.printf("F1Score  : %.4f%n", f1score);
   }
 
   @Override

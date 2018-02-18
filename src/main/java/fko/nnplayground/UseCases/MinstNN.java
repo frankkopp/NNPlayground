@@ -70,7 +70,7 @@ public class MinstNN {
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 128;
+    int batchSize = 32;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -114,33 +114,22 @@ public class MinstNN {
     neuralNetwork.addListener(new TrainingUI(neuralNetwork, 100));
 
     // layer (hidden layer)
-    neuralNetwork.addLayer(
-            new Layer(height * width * channels, 1000,
-                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
-
-    // layer (hidden layer)
-    neuralNetwork.addLayer(
-            new Layer(1000, 500,
-                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
-
-    // layer (hidden layer)
-    neuralNetwork.addLayer(
-            new Layer(500, 500,
-                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
-
-    // layer (hidden layer)
-    neuralNetwork.addLayer(
-            new Layer(500, 250,
-                      WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+    final Layer layer1 = new Layer(height * width * channels, 1000,
+                                  WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
 
     // output layer
-    neuralNetwork.addLayer(
-            new OutputLayer(250, outputNum,
-                            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed));
+    final OutputLayer outputLayer = new OutputLayer(1000, outputNum,
+                                              WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID,
+                                              seed);
 
-    int nEpochs = 20;
+    layer1.setL2Strength(0.01d);
+    outputLayer.setL2Strength(0.01d);
+
+    neuralNetwork.addLayer(layer1, outputLayer);
+
+    int nEpochs = 10;
     int iterations = 10;
-    neuralNetwork.setLearningRate(1d);
+    neuralNetwork.setLearningRate(0.01d);
 
     neuralNetwork.train(trainIter, nEpochs, iterations);
 

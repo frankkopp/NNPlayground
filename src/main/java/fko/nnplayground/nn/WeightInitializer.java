@@ -67,7 +67,8 @@ public class WeightInitializer {
         break;
       case NORMAL:
       default:
-        weightsMatrix = Nd4j.randn(outputSize, inputSize, seed);
+        // TODO Exception
+        return null;
     }
     LOG.debug("Weights initialized for outputSize {} and inputSize {}", outputSize, inputSize);
     LOG.trace("\n{}", weightsMatrix);

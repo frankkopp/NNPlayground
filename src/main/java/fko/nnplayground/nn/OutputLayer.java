@@ -27,7 +27,6 @@ package fko.nnplayground.nn;
 
 import fko.nnplayground.API.IOutputLayer;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +41,8 @@ public class OutputLayer extends Layer implements IOutputLayer {
   private INDArray labels;
   private double cost;
   private INDArray cDelta;
+
+  private LossFunction.LossFunctions lossFunction = LossFunction.LossFunctions.MSE;;
 
   public OutputLayer(final int inputSize, final int outputSize, final WeightInitializer.WeightInit weightInit,
                      final Activation.Activations activationFunction, final int seed) {
@@ -59,7 +60,6 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public INDArray forwardPass(final INDArray activationPreviousLayer) {
     super.forwardPass(activationPreviousLayer);
-    // TODO: if SOFTMAX compute class props
     return getActivation();
   }
 
@@ -73,33 +73,31 @@ public class OutputLayer extends Layer implements IOutputLayer {
   }
 
   @Override
+  public double computeCost(final INDArray labels, final int nExamples) {
+    // TODO: this could be cached
+    // TODO: add more cost functions
+
+    // compute loss
+    final double unRegCost = LossFunction.computeLoss(lossFunction, labels, activation, nExamples);
+
+    // compute regularization
+    final double regularization =
+            0.5 * (l2Strength / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
+    // compute total loss
+    this.cost = unRegCost + regularization;
+    return cost;
+  }
+
+  @Override
   public INDArray computeCostGradient(final INDArray labels, final int nExamples) {
     // TODO: this could be cached
     // TODO: implement different loss functions C
 
     this.labels = labels;
 
-    // this is the gradient/derivative of the quadratic cost function!
-    // (aL−y)- the derivative of cost also has a 1/n - this is done in the weights update to also cover the Bias
-    // TODO: do we need to add regularization here?
-    cDelta = getActivation().sub(this.labels);
+    this.cDelta = LossFunction.computeLossGradient(lossFunction, labels, activation, nExamples);
 
     return cDelta;
-  }
-
-  @Override
-  public double computeCost(final INDArray labels, final int nExamples) {
-    // TODO: this could be cached
-    // TODO: add more cost functions
-
-    // quadratic cost function
-    // (1/2n) * ∑ ||y(x)-aL(x)||^2
-    final double unRegCost =
-            Transforms.pow(labels.sub(activation), 2).sumNumber().doubleValue() / (2 * nExamples);
-    final double regularization =
-            0.5 * (l2Strength / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
-    this.cost = unRegCost + regularization;
-    return cost;
   }
 
   @Override

@@ -102,13 +102,13 @@ public class XorNN {
 
     // z_output layer
     final OutputLayer layer3 = new OutputLayer(16, 2,
-            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, 0.001d, seed);
+            WeightInitializer.WeightInit.XAVIER, Activation.Activations.SOFTMAX, 0.001d, seed);
 
     neuralNetwork.addLayer(layer1, layer3);
 
     neuralNetwork.addListener(new TrainingUI(neuralNetwork, 10));
 
-    int nEpochs = 5;
+    int nEpochs = 50;
     int iterations = 500;
     neuralNetwork.setLearningRate(1d);
 

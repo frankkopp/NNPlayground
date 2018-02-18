@@ -267,10 +267,10 @@ public class TrainingUI extends Application implements ITrainingListener {
 
   private void updateViewAfterIteration(final int iteration) {
 
-    currentIterationLabel.setText("" + iteration);
+    currentIterationLabel.setText(String.format("%,d", iteration));
 
     // total examples seen
-    examplesLabel.setText("" + neuralNetwork.getExamplesSeenTraining());
+    examplesLabel.setText(String.format("%,d", neuralNetwork.getExamplesSeenTraining()));
 
     // score label update
     double score = neuralNetwork.getCurrentScore();
@@ -300,26 +300,6 @@ public class TrainingUI extends Application implements ITrainingListener {
     f1scoreLabel.setText("" + neuralNetwork.getF1score());
 
     updateActivationView();
-  }
-
-  @Override
-  public void onForwardPass(final List<INDArray> activations) {
-
-  }
-
-  @Override
-  public void onForwardPass(final Map<String, INDArray> activations) {
-
-  }
-
-  @Override
-  public void onGradientCalculation() {
-
-  }
-
-  @Override
-  public void onBackwardPass() {
-
   }
 
   @Override
