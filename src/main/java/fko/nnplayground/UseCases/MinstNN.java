@@ -70,7 +70,7 @@ public class MinstNN {
     int width = 28;
     int channels = 1; // single channel for grayscale images
     int outputNum = 10; // 10 digits classification
-    int batchSize = 32;
+    int batchSize = 64;
 
     int seed = 1234;
     Random randNumGen = new Random(seed);
@@ -114,22 +114,22 @@ public class MinstNN {
     neuralNetwork.addListener(new TrainingUI(neuralNetwork, 100));
 
     // layer (hidden layer)
-    final Layer layer1 = new Layer(height * width * channels, 1000,
+    final Layer layer1 = new Layer(height * width * channels, 500,
                                   WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
 
     // output layer
-    final OutputLayer outputLayer = new OutputLayer(1000, outputNum,
+    final OutputLayer outputLayer = new OutputLayer(500, outputNum,
                                               WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID,
                                               seed);
 
-    layer1.setL2Strength(0.01d);
-    outputLayer.setL2Strength(0.01d);
+    layer1.setL2Strength(.005d);
+    outputLayer.setL2Strength(.005d);
 
     neuralNetwork.addLayer(layer1, outputLayer);
 
     int nEpochs = 10;
     int iterations = 10;
-    neuralNetwork.setLearningRate(0.01d);
+    neuralNetwork.setLearningRate(0.1d);
 
     neuralNetwork.train(trainIter, nEpochs, iterations);
 
