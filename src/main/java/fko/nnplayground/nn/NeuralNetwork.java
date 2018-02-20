@@ -25,6 +25,7 @@
 
 package fko.nnplayground.nn;
 
+import com.google.common.base.Stopwatch;
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.IOutputLayer;
@@ -68,7 +69,6 @@ public class NeuralNetwork implements INeuralNetwork {
 
   private int totalExamplesSeenTraining;
 
-
   // Evaluation variables - will move to a separate class in the future
   private int totalIterations;
   private int truePositives;
@@ -86,11 +86,6 @@ public class NeuralNetwork implements INeuralNetwork {
   private List<ITrainingListener> listenerList = new ArrayList<>();
 
   /**
-   * TODO: save and load train data
-   * TODO: add SOFTMAX
-   * TODO: add listener
-   * TODO: improve evaluation
-   *
    * @param height
    * @param width
    * @param channels
@@ -121,6 +116,7 @@ public class NeuralNetwork implements INeuralNetwork {
     this.iterations = iterations;
     totalIterations = 0;
 
+    // onTrainStart listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainStart();
     }
@@ -129,6 +125,7 @@ public class NeuralNetwork implements INeuralNetwork {
     for (int epoch = 0; epoch < this.epochs; epoch++) {
       LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
 
+      // onEpochStart listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochStart(epoch+1, dataSetIter.batch());
       }
@@ -136,6 +133,7 @@ public class NeuralNetwork implements INeuralNetwork {
       if (dataSetIter.resetSupported()) {
         dataSetIter.reset();
       }
+
       // Batch
       while (dataSetIter.hasNext()) { // one batch
         // get the next batch of examples
@@ -150,12 +148,14 @@ public class NeuralNetwork implements INeuralNetwork {
         evalBatch(batch);
       }
 
+      // onEpochEnd listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochEnd();
       }
 
     }
 
+    // onTrainEnd listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainEnd();
     }
@@ -175,6 +175,7 @@ public class NeuralNetwork implements INeuralNetwork {
     this.iterations = iterations;
     totalIterations = 0;
 
+    // onTrainStart listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainStart();
     }
@@ -188,6 +189,8 @@ public class NeuralNetwork implements INeuralNetwork {
     // Epoch
     for (int epoch = 0; epoch < epochs; epoch++) {
       LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
+
+      // onEpochStart listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochStart(epoch+1, dataSet.numExamples());
       }
@@ -197,11 +200,13 @@ public class NeuralNetwork implements INeuralNetwork {
       // do an evaluation of the training data after each epoch
       evalBatch(dataSet);
 
+      // onEpochEnd listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochEnd();
       }
     }
 
+    // onTrainEnd listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainEnd();
     }
@@ -222,6 +227,7 @@ public class NeuralNetwork implements INeuralNetwork {
     this.iterations = iterations;
     totalIterations = 0;
 
+    // onTrainStart listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainStart();
     }
@@ -230,17 +236,20 @@ public class NeuralNetwork implements INeuralNetwork {
     for (int epoch = 0; epoch < epochs; epoch++) {
       LOG.info("Train epoch {} of {}:", epoch + 1, epochs);
 
+      // onEpochStart listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochStart(epoch+1, features.columns());
       }
 
       optimize(features, labels);
 
+      // onEpochEnd listener notification
       for (ITrainingListener listener : listenerList) {
         listener.onEpochEnd();
       }
     }
 
+    // onTrainEnd listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onTrainEnd();
     }
@@ -273,10 +282,13 @@ public class NeuralNetwork implements INeuralNetwork {
       throw e;
     }
 
+    // batch size?
     final int nExamples = features.columns();
 
     // Iterations
     for (int iteration = 0; iteration < iterations; iteration++) {
+
+      Stopwatch iterationStopwatch = Stopwatch.createStarted();
 
       totalExamplesSeenTraining += features.columns();
 
@@ -284,16 +296,17 @@ public class NeuralNetwork implements INeuralNetwork {
       // http://neuralnetworksanddeeplearning.com/chap2.html#the_backpropagation_algorithm
 
       // forward pass through all layers
+      Stopwatch forwardPassStopwatch = Stopwatch.createStarted();
       INDArray activationLastLayer = features;
       for (ILayer layer : layerList) {
         activationLastLayer = layer.forwardPass(activationLastLayer);
       }
+      forwardPassStopwatch.stop();
 
       // z_output loss
       currentScore = outputLayer.computeCost(labels, nExamples);
       if (totalIterations++ % 100 == 0) {
-        LOG.info(
-                "Loss at iteration {} (batch size {}) = {}",
+        LOG.info("Loss at iteration {} (batch size {}) = {}",
                 totalIterations - 1,
                 nExamples,
                 currentScore);
@@ -305,24 +318,41 @@ public class NeuralNetwork implements INeuralNetwork {
       // BP2: δl= ((wl+1)T * δl+1) ⊙ σ′(zl) 8An equation for the error δl in terms of the error in the next layer, δl+1]
       // BP3: ∂C / ∂blj = δlj [An equation for the rate of change of the cost with respect to any bias in the network]
       // BP4: ∂C / ∂wljk = al−1k ⊙ δlj [An equation for the rate of change of the cost with respect to any weight in the network]
+      Stopwatch backPropagationStopwatch = Stopwatch.createStarted();
       final INDArray costGradient = outputLayer.computeCostGradient(labels, nExamples);
+
+
       INDArray errorPreviousLayer = outputLayer.backwardPass(costGradient);
+      // iterate backwards through layers
       for (int i = layerList.size() - 2; i >= 0; i--) {
         errorPreviousLayer = layerList.get(i).backwardPass(errorPreviousLayer);
       }
+      backPropagationStopwatch.stop();
 
       // update parameters of all layers
+      Stopwatch updateStopwatch = Stopwatch.createStarted();
       INDArray lastLayerActivation = features;
       for (ILayer layer : layerList) {
         layer.updateWeights(lastLayerActivation, nExamples, learningRate);
         lastLayerActivation = layer.getActivation();
       }
+      updateStopwatch.stop();
 
+      // onIterationEnd listener notification
       for (ITrainingListener listener : listenerList) {
-        listener.iterationDone(totalIterations+1);
+        listener.onIterationEnd(totalIterations + 1);
       }
+
+      iterationStopwatch.stop();
+
+//      System.out.printf("Timing: (%d examples)", features.columns());
+//      System.out.printf(" Iteration: %s ", iterationStopwatch.toString());
+//      System.out.printf(" Forward: %s ", forwardPassStopwatch.toString());
+//      System.out.printf(" Backward: %s ", backPropagationStopwatch.toString());
+//      System.out.printf(" Update: %s%n", updateStopwatch.toString());
     }
   }
+
 
   @Override
   public void eval(final DataSetIterator dataSetIterator) {
@@ -337,6 +367,7 @@ public class NeuralNetwork implements INeuralNetwork {
       dataSetIterator.reset();
     }
 
+    // onEvalStart listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onEvalStart();
     }
@@ -347,6 +378,7 @@ public class NeuralNetwork implements INeuralNetwork {
       evalBatch(batch);
     }
 
+    // onEvalEnd listener notification
     for (ITrainingListener listener : listenerList) {
       listener.onEvalEnd();
     }
@@ -413,7 +445,6 @@ public class NeuralNetwork implements INeuralNetwork {
         trueNegatives += nLabels - 2;
       }
     }
-    // FIXME - might be wrong
     totalPositives += dataSet.numExamples(); // number of examples as each examples has one positive
     totalNegatives += dataSet.numExamples()
                       * (nLabels - 1); // number off examples time number of labels - 1 as one is positive
@@ -423,6 +454,7 @@ public class NeuralNetwork implements INeuralNetwork {
     precision = (double) truePositives / (truePositives + falsePositives);
     accuracy = (double) (truePositives + trueNegatives) / (totalPositives + totalNegatives);
     f1score = (double) (2 * truePositives) / (2 * truePositives + falsePositives + falseNegatives);
+
   }
 
   @Override
@@ -441,8 +473,7 @@ public class NeuralNetwork implements INeuralNetwork {
     System.out.printf("Total Positives: %,d%nTotal Negatives: %,d%n", totalPositives, totalNegatives);
     System.out.printf("Recall   : %.4f%n", recall);
     System.out.printf("Precision: %.4f%n", precision);
-    System.out
-            .printf("Accuracy : %.4f%n", accuracy);
+    System.out.printf("Accuracy : %.4f%n", accuracy);
     System.out.printf("F1Score  : %.4f%n", f1score);
   }
 

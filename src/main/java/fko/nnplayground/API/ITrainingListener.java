@@ -28,7 +28,7 @@ package fko.nnplayground.API;
 
 public interface ITrainingListener {
 
-  void iterationDone(final int iteration);
+  void onIterationEnd(final int iteration);
 
   void onTrainStart();
 

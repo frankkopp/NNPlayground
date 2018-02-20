@@ -110,17 +110,19 @@ public class Layer implements ILayer {
     z_output = weightsMatrix.mmul(activationPreviousLayer).addColumnVector(biasMatrix);
     // a = nonLin(z)
     activation = Activation.applyActivation(activationFunction, z_output);
+
     return getActivation();
   }
 
   @Override
-  public INDArray backwardPass(INDArray delta) {
+  public INDArray backwardPass(INDArray gradient) {
     // σ′(zl)
     final INDArray derivative = Activation.applyDerivative(activationFunction, activation);
     // δl=((wl+1)T*δl+1) ⊙ σ′(zl)
-    error = delta.mul(derivative);
+    error = gradient.mul(derivative);
     // δl-l=((wl)T*δl)
     previousLayerDelta = weightsMatrix.transpose().mmul(error);
+
     return getPreviousLayerDelta();
   }
 
@@ -169,22 +171,22 @@ public class Layer implements ILayer {
 
   @Override
   public INDArray getZ_output() {
-    return z_output == null ? null : z_output.dup();
+    return z_output == null ? null : z_output;
   }
 
   @Override
   public INDArray getActivation() {
-    return activation == null ? null : activation.dup();
+    return activation == null ? null : activation;
   }
 
   @Override
   public INDArray getWeightsMatrix() {
-    return weightsMatrix.dup();
+    return weightsMatrix;
   }
 
   @Override
   public INDArray getBiasMatrix() {
-    return biasMatrix.dup();
+    return biasMatrix;
   }
 
   @Override
@@ -199,12 +201,12 @@ public class Layer implements ILayer {
 
   @Override
   public INDArray getError() {
-    return error.dup();
+    return error;
   }
 
   @Override
   public INDArray getPreviousLayerDelta() {
-    return previousLayerDelta.dup();
+    return previousLayerDelta;
   }
 
   @Override

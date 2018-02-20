@@ -29,6 +29,7 @@ import com.sun.javafx.application.PlatformImpl;
 import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.ITrainingListener;
+import fko.nnplayground.nn.Activation;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -201,18 +202,21 @@ public class TrainingUI extends Application implements ITrainingListener {
       final int rectangleSize = 15;
 
       final INDArray layerActivation = chosenLayer.getActivation().getColumn(0);
+      final Activation.Activations actFun = chosenLayer.getActivationFunction();
 
       activationPane.getChildren().clear();
       final int examples = layerActivation.columns();
       for (int j = 0; j < examples; j++) {
         for (int i = 0; i < layerActivation.rows(); i++) {
           final double neuronActivation = layerActivation.getDouble(i, j);
+          // FIXME RELU
           final int rgbValue = (int) (neuronActivation * 255);
           Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
           // potential dead neurons
-          if (neuronActivation < 0.1) {
+          if ((actFun.equals(Activation.Activations.SIGMOID) || actFun.equals(Activation.Activations.RELU))
+              && neuronActivation < 0.1) {
             color = Color.LIGHTBLUE;
-          } else if (neuronActivation > 0.9) {
+          } else if (actFun.equals(Activation.Activations.SIGMOID) && neuronActivation > 0.9) {
             color = Color.ORANGERED;
           }
           Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
@@ -259,7 +263,7 @@ public class TrainingUI extends Application implements ITrainingListener {
   }
 
   @Override
-  public void iterationDone(final int iteration) {
+  public void onIterationEnd(final int iteration) {
     if (iteration % interval == 0) {
       Platform.runLater(() -> updateViewAfterIteration(iteration));
     }
@@ -314,7 +318,7 @@ public class TrainingUI extends Application implements ITrainingListener {
       precisionEvalLabel.setText("" + neuralNetwork.getPrecision());
       accuracyEvalLabel.setText("" + neuralNetwork.getAccuracy());
       f1ScoreEvalLabel.setText("" + neuralNetwork.getF1score());
-      examplesEvalLabel.setText("" + neuralNetwork.getExamplesSeenEval());
+      examplesEvalLabel.setText(String.format("%,d",  neuralNetwork.getExamplesSeenEval()));
     });
   }
 

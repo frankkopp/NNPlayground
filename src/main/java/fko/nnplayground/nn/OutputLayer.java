@@ -75,11 +75,8 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public double computeCost(final INDArray labels, final int nExamples) {
     // TODO: this could be cached
-    // TODO: add more cost functions
-
     // compute loss
     final double unRegCost = LossFunction.computeLoss(lossFunction, labels, activation, nExamples);
-
     // compute regularization
     final double regularization =
             0.5 * (l2Strength / nExamples) * (weightsMatrix.mul(weightsMatrix).sumNumber().doubleValue());
@@ -91,12 +88,8 @@ public class OutputLayer extends Layer implements IOutputLayer {
   @Override
   public INDArray computeCostGradient(final INDArray labels, final int nExamples) {
     // TODO: this could be cached
-    // TODO: implement different loss functions C
-
     this.labels = labels;
-
     this.cDelta = LossFunction.computeLossGradient(lossFunction, labels, activation, nExamples);
-
     return cDelta;
   }
 
