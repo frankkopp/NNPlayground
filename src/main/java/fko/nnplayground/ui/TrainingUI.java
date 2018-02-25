@@ -126,19 +126,16 @@ public class TrainingUI extends Application implements ITrainingListener {
     // FXML init
     initialize();
 
-    // set initial window title - will be extended in controller
-    primaryStage.setTitle("Training Monitor by Frank Kopp");
     // setup window
     final Scene scene = new Scene(root);
     primaryStage.setScene(scene);
     primaryStage.centerOnScreen();
     primaryStage.setResizable(true);
+    primaryStage.setTitle("Training Monitor by Frank Kopp");
+    primaryStage.setOnCloseRequest(event -> System.exit(0));
 
     // extend the FXML view
     addAdditionalViews();
-
-    // closeAction
-    primaryStage.setOnCloseRequest(event -> System.exit(0));
 
     // finally show window
     primaryStage.show();
@@ -185,11 +182,11 @@ public class TrainingUI extends Application implements ITrainingListener {
     final int layerIdx = new_value.intValue();
     chosenLayer = neuralNetwork.getLayerList().get(layerIdx);
 
+    // work in progress - these values are not really needed yet
     numberOfRows.setText("" + chosenLayer.getOutputSize());
     numberOfColumns.setText("1");
 
     updateActivationView();
-
   }
 
   /**
@@ -212,7 +209,7 @@ public class TrainingUI extends Application implements ITrainingListener {
           // FIXME RELU
           final int rgbValue = (int) (neuronActivation * 255);
           Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
-          // potential dead neurons
+          // potential dead neurons are colorized
           if ((actFun.equals(Activation.Activations.SIGMOID) || actFun.equals(Activation.Activations.RELU))
               && neuronActivation < 0.1) {
             color = Color.LIGHTBLUE;
