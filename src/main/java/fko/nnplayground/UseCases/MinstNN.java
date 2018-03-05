@@ -115,7 +115,7 @@ public class MinstNN {
 
     // layer (hidden layer)
     final Layer layer1 = new Layer(height * width * channels, 500,
-                                  WeightInitializer.WeightInit.XAVIER, Activation.Activations.SIGMOID, seed);
+                                  WeightInitializer.WeightInit.XAVIER, Activation.Activations.RELU, seed);
 
     // output layer
     final OutputLayer outputLayer = new OutputLayer(500, outputNum,

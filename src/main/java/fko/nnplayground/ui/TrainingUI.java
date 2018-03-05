@@ -30,6 +30,8 @@ import fko.nnplayground.API.ILayer;
 import fko.nnplayground.API.INeuralNetwork;
 import fko.nnplayground.API.ITrainingListener;
 import fko.nnplayground.nn.Activation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -48,11 +50,13 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -99,6 +103,9 @@ public class TrainingUI extends Application implements ITrainingListener {
               start(primaryStage);
             });
     Platform.setImplicitExit(true);
+
+    // HACK to shorten Tooltip delay
+    hackTooltipStartTiming();
 
     // wait for the UI to show before returning
     do {
@@ -203,17 +210,21 @@ public class TrainingUI extends Application implements ITrainingListener {
 
       activationPane.getChildren().clear();
       final int examples = layerActivation.columns();
+      final double maxValue = layerActivation.maxNumber().doubleValue();
       for (int j = 0; j < examples; j++) {
         for (int i = 0; i < layerActivation.rows(); i++) {
           final double neuronActivation = layerActivation.getDouble(i, j);
-          // FIXME RELU
-          final int rgbValue = (int) (neuronActivation * 255);
+          int rgbValue;
+          if (maxValue > 1) {
+            rgbValue = (int) ((neuronActivation/maxValue) * 255);
+          } else {
+            rgbValue = (int) (neuronActivation * 255);
+          }
           Color color = Color.rgb(rgbValue, rgbValue, rgbValue);
           // potential dead neurons are colorized
-          if ((actFun.equals(Activation.Activations.SIGMOID) || actFun.equals(Activation.Activations.RELU))
-              && neuronActivation < 0.1) {
+          if (rgbValue < 25) {
             color = Color.LIGHTBLUE;
-          } else if (actFun.equals(Activation.Activations.SIGMOID) && neuronActivation > 0.9) {
+          } else if (rgbValue > 230) {
             color = Color.ORANGERED;
           }
           Rectangle rectangle = new Rectangle(rectangleSize, rectangleSize);
@@ -317,6 +328,34 @@ public class TrainingUI extends Application implements ITrainingListener {
       f1ScoreEvalLabel.setText("" + neuralNetwork.getF1score());
       examplesEvalLabel.setText(String.format("%,d",  neuralNetwork.getExamplesSeenEval()));
     });
+  }
+
+  /**
+   * Tooltips do not allow to change the activation time - this is a hack to fix this.
+   * Needs only to be called once as it changes static values of the class.
+   */
+  public static void hackTooltipStartTiming() {
+    Tooltip tooltip = new Tooltip("");
+    try {
+      Field fieldBehavior = tooltip.getClass().getDeclaredField("BEHAVIOR");
+      fieldBehavior.setAccessible(true);
+      Object objBehavior = fieldBehavior.get(tooltip);
+
+      Field activationTimer = objBehavior.getClass().getDeclaredField("activationTimer");
+      activationTimer.setAccessible(true);
+      Timeline newActivationTimer = (Timeline) activationTimer.get(objBehavior);
+      newActivationTimer.getKeyFrames().clear();
+      newActivationTimer.getKeyFrames().add(new KeyFrame(new Duration(50)));
+
+      Field hideTimer = objBehavior.getClass().getDeclaredField("hideTimer");
+      hideTimer.setAccessible(true);
+      Timeline newHideTimer = (Timeline) hideTimer.get(objBehavior);
+      newHideTimer.getKeyFrames().clear();
+      newHideTimer.getKeyFrames().add(new KeyFrame(new Duration(5000)));
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @FXML // fx:id="currentScoreLabel"
