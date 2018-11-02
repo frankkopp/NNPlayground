@@ -143,7 +143,9 @@ public class NeuralNetwork implements INeuralNetwork {
         final INDArray features =
                 batch.getFeatures().reshape(batch.numExamples(), inputLength).transpose();
         final INDArray labels = batch.getLabels().transpose();
+
         optimize(features, labels);
+
         // do an evaluation of the training data after each epoch
         evalBatch(batch);
       }
@@ -320,8 +322,6 @@ public class NeuralNetwork implements INeuralNetwork {
       // BP4: ∂C / ∂wljk = al−1k ⊙ δlj [An equation for the rate of change of the cost with respect to any weight in the network]
       Stopwatch backPropagationStopwatch = Stopwatch.createStarted();
       final INDArray costGradient = outputLayer.computeCostGradient(labels, nExamples);
-
-
       INDArray errorPreviousLayer = outputLayer.backwardPass(costGradient);
       // iterate backwards through layers
       for (int i = layerList.size() - 2; i >= 0; i--) {

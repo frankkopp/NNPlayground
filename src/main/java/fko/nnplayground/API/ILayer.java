@@ -48,11 +48,6 @@ public interface ILayer {
   INDArray forwardPass(INDArray activationPreviousLayer);
 
   /**
-   * @return the z_output of the layer before the nonLin activation function
-   */
-  INDArray getZ_output();
-
-  /**
    * The backward pass propagates the layer's error back using the gradient to the previous layer.
    * It calculates the error for this layer which can be queried by <code>getError()</code>.
    *
@@ -70,6 +65,11 @@ public interface ILayer {
    * @param learningRate the factor for update steps on the weights
    */
   void updateWeights(final INDArray activationPreviousLayer, final int nExamples, double learningRate);
+
+  /**
+   * @return the z_output of the layer before the nonLin activation function
+   */
+  INDArray getZ_output();
 
   /*
    * Getters and Setters

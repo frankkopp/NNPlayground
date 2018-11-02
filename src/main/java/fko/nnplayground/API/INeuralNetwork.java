@@ -38,17 +38,21 @@ public interface INeuralNetwork {
 
   void saveToFile(String nnSaveFile);
 
+  void train(DataSetIterator dataSetIter, int epochs, int iterations);
+
+  void train(DataSet dataSet, int epochs, int iterations);
+
+  void train(INDArray features, INDArray labels, int epochs, int iterations);
+
+  void eval(DataSetIterator dataSetIterator);
+
+  void eval(DataSet dataSet);
+
+  INDArray predict(INDArray features);
+
   void addLayer(ILayer layer);
 
   void addLayer(ILayer... layer);
-
-  double getAccuracy();
-
-  int getExamplesSeenTraining();
-
-  int getExamplesSeenEval();
-
-  double getF1score();
 
   List<ILayer> getLayerList();
 
@@ -56,13 +60,9 @@ public interface INeuralNetwork {
 
   int getOutputLength();
 
-  void train(DataSetIterator dataSetIter, int epochs, int iterations);
+  int getExamplesSeenTraining();
 
-  void train(DataSet dataSet, int epochs, int iterations);
-
-  void train(INDArray features, INDArray labels, int epochs, int iterations);
-
-  INDArray predict(INDArray features);
+  int getExamplesSeenEval();
 
   double getCurrentScore();
 
@@ -72,11 +72,11 @@ public interface INeuralNetwork {
 
   double getRecall();
 
+  double getAccuracy();
+
+  double getF1score();
+
   void setLearningRate(double learningRate);
-
-  void eval(DataSetIterator dataSetIterator);
-
-  void eval(DataSet dataSet);
 
   void addListener(ITrainingListener listener);
 
