@@ -171,6 +171,7 @@ public class Cifar {
         }
         return model;
     }
+
     public void testModelByUnkownImage(MultiLayerNetwork model) {
         JFileChooser fc = new JFileChooser();
         int ret = fc.showOpenDialog(null);
